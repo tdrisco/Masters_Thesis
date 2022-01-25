@@ -1,0 +1,14 @@
+Useful links used when working on the I2C communication protocol library
+
+Arduino:
+  https://www.arduino.cc/en/reference/wire
+  https://docs.arduino.cc/learn/communication/wire
+
+
+ICM-20948 IMU:
+  https://www.sparkfun.com/products/15335
+  https://cdn.sparkfun.com/assets/7/f/e/c/d/DS-000189-ICM-20948-v1.3.pdf
+
+
+I2C Protocol:
+  https://www.ti.com/lit/an/slva704/slva704.pdf?ts=1643128423302&ref_url=https%253A%252F%252Fwww.bing.com%252F
