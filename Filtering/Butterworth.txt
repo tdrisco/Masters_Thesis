@@ -1,0 +1,1 @@
+This file contains information and resources related to the butterworth filtering technique
