@@ -106,7 +106,10 @@ class MTDevice(object):
                     % (mid, getMIDName(mid), length,
                        ' '.join("%02X" % v for v in data)))
             if mid == MID.Error:
-                raise MTErrorMessage(data[0])
+                if data[0] == 0x29:
+                    pass
+                else:
+                    raise MTErrorMessage(data[0])
             return (mid, buf[:-1])
         else:
             raise MTException("could not find message.")
