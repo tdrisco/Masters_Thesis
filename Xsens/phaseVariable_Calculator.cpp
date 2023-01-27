@@ -31,7 +31,12 @@
 //  
 
 //--------------------------------------------------------------------------------
-// Public Xsens device API C++ example MTi receive data.
+// Public Xsens device API C++
+// Timothy Driscoll
+// Date: January 24, 2023
+// Function: Program used to process Xsens MTI-7-DK and calculate 
+//			 a human inspired phase variable to parameterize the human
+//			 gait cycle
 //--------------------------------------------------------------------------------
 #include <xscontroller/xscontrol_def.h>
 #include <xscontroller/xsdevice_def.h>
@@ -102,6 +107,9 @@ private:
 //--------------------------------------------------------------------------------
 int main(void)
 {
+	//Variable to test the sample frequency
+	int sample_Hz = 0;
+	
 	cout << "Creating XsControl object..." << endl;
 	XsControl* control = XsControl::construct();
 	assert(control != 0);
@@ -189,20 +197,24 @@ int main(void)
 	if (!device->setOutputConfiguration(configArray))
 		return handleError("Could not configure MTi device. Aborting.");
 
+	/*
 	cout << "Creating a log file..." << endl;
 	string logFileName = "logfile.mtb";
 	if (device->createLogFile(logFileName) != XRV_OK)
 		return handleError("Failed to create a log file. Aborting.");
 	else
 		cout << "Created a log file: " << logFileName.c_str() << endl;
+	*/
 
 	cout << "Putting device into measurement mode..." << endl;
 	if (!device->gotoMeasurement())
 		return handleError("Could not put device into measurement mode. Aborting.");
 
+	/*
 	cout << "Starting recording..." << endl;
 	if (!device->startRecording())
 		return handleError("Failed to start recording. Aborting.");
+	*/
 
 	cout << "\nMain loop. Recording data for 10 seconds." << endl;
 	cout << string(79, '-') << endl;
@@ -212,7 +224,7 @@ int main(void)
 	{
 		if (callback.packetAvailable())
 		{
-			cout << setw(5) << fixed << setprecision(2);
+			cout << setw(5) << fixed << setprecision(4);
 
 			// Retrieve a packet
 			XsDataPacket packet = callback.getNextPacket();
@@ -237,43 +249,31 @@ int main(void)
 
 			if (packet.containsOrientation())
 			{
+				sample_Hz++;
+				/*
 				XsQuaternion quaternion = packet.orientationQuaternion();
 				cout << "\r"
 					<< "q0:" << quaternion.w()
 					<< ", q1:" << quaternion.x()
 					<< ", q2:" << quaternion.y()
 					<< ", q3:" << quaternion.z();
+				*/
 
 				XsEuler euler = packet.orientationEuler();
-				cout << " |Roll:" << euler.roll()
+				cout << "\r"
+					<< " |Roll:" << euler.roll()
 					<< ", Pitch:" << euler.pitch()
-					<< ", Yaw:" << euler.yaw();
+					<< ", Yaw:" << euler.yaw() << "|";
 			}
 
-			if (packet.containsLatitudeLongitude())
-			{
-				XsVector latLon = packet.latitudeLongitude();
-				cout << " |Lat:" << latLon[0]
-					<< ", Lon:" << latLon[1];
-			}
-
-			if (packet.containsAltitude())
-				cout << " |Alt:" << packet.altitude();
-
-			if (packet.containsVelocity())
-			{
-				XsVector vel = packet.velocity(XDI_CoordSysEnu);
-				cout << " |E:" << vel[0]
-					<< ", N:" << vel[1]
-					<< ", U:" << vel[2];
-			}
-			
 			cout << flush;
 		}
 		XsTime::msleep(0);
 	}
 	cout << "\n" << string(79, '-') << "\n";
 	cout << endl;
+	
+	/*
 
 	cout << "Stopping recording..." << endl;
 	if (!device->stopRecording())
@@ -282,6 +282,7 @@ int main(void)
 	cout << "Closing log file..." << endl;
 	if (!device->closeLogFile())
 		return handleError("Failed to close log file. Aborting.");
+	*/
 
 	cout << "Closing port..." << endl;
 	control->closePort(mtPort.portName().toStdString());
@@ -290,6 +291,9 @@ int main(void)
 	control->destruct();
 
 	cout << "Successful exit." << endl;
+	
+	cout << sample_Hz << " in 10 seconds for a frequence of " 
+	<< sample_Hz/10 << endl;
 
 	cout << "Press [ENTER] to continue." << endl;
 	cin.get();
