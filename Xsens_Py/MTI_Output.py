@@ -6,14 +6,13 @@ import MID_Codes
 import time
 import datetime
 
+import matplotlib.pyplot as plt
+
 from math import sqrt
 
 _RUNTIME = 1
 
-_RASPBERRYPI = True
-
-_TEST = 1
-
+_RASPBERRYPI = False
 
 
 class XSensDriver(object):
@@ -31,6 +30,17 @@ class XSensDriver(object):
         baudrate = 115200
 
         self.count = 0
+
+        #Setup the sub plots for Roll Yaw Pitch
+        self.fig = plt.figure()
+        self.ax1 = self.fig.add_subplot(3, 1, 1)
+        self.ax2 = self.fig.add_subplot(3, 1, 2)
+        self.ax2 = self.fig.add_subplot(3, 1, 3)
+
+        self.delta_t = []
+        self.yaw = []
+        self.pitch = []
+        self.roll = []
 
 
         if device == 'auto':

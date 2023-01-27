@@ -1,0 +1,17 @@
+import time
+import matplotlib.pyplot as plt
+import random
+ 
+fig = plt.figure()
+ax = fig.add_subplot()
+fig.show()
+x = []
+n = 150 # number of data points
+ 
+for i in range(n):
+    x.append(random.randint(0,100))
+    ax.plot(x, color='r')
+    fig.canvas.draw()
+    ax.set_xlim(left=max(0, i - 50), right=i + 3)
+    time.sleep(0.01)
+plt.show()
