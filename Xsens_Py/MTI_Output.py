@@ -10,6 +10,8 @@ from math import sqrt
 
 _RUNTIME = 1
 
+_RASPBERRYPI = True
+
 
 
 class XSensDriver(object):
@@ -17,9 +19,14 @@ class XSensDriver(object):
     def __init__(self):
 
         #Tune these parameters depeding on Pi or computer
-        device = 'COM10'
+        if _RASPBERRYPI:
+            device = '/dev/ttyUSB0'
+            timeout = 0.001
+        else:
+            device = 'COM10'
+            timeout = 0.002
+        
         baudrate = 115200
-        timeout = 0.002
 
         self.count = 0
 
@@ -240,7 +247,7 @@ class XSensDriver(object):
         try:
             data = self.mt.read_measurement()
         except MID_Codes.MTTimeoutException:
-            time.sleep(0.001)
+            time.sleep(0.01)
             return
         # common header
         #self.h = Header()

@@ -982,8 +982,8 @@ def main():
         usage()
         return 1
     # default values
-    #device = '/dev/ttyUSB0'
-    device = 'COM10'
+    device = '/dev/ttyUSB0'
+    #device = 'COM10'
     baudrate = 115200
     mode = None
     settings = None
