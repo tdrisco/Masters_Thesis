@@ -12,6 +12,8 @@ _RUNTIME = 1
 
 _RASPBERRYPI = True
 
+_TEST = 1
+
 
 
 class XSensDriver(object):
