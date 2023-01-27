@@ -12,7 +12,7 @@ from math import sqrt
 
 _RUNTIME = 1
 
-_RASPBERRYPI = False
+_RASPBERRYPI = True
 
 
 class XSensDriver(object):
@@ -32,10 +32,10 @@ class XSensDriver(object):
         self.count = 0
 
         #Setup the sub plots for Roll Yaw Pitch
-        self.fig = plt.figure()
-        self.ax1 = self.fig.add_subplot(3, 1, 1)
-        self.ax2 = self.fig.add_subplot(3, 1, 2)
-        self.ax2 = self.fig.add_subplot(3, 1, 3)
+        #self.fig = plt.figure()
+        #self.ax1 = self.fig.add_subplot(3, 1, 1)
+        #self.ax2 = self.fig.add_subplot(3, 1, 2)
+        #self.ax2 = self.fig.add_subplot(3, 1, 3)
 
         self.delta_t = []
         self.yaw = []
