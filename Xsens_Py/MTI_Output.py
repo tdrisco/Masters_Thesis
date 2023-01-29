@@ -6,13 +6,17 @@ import MID_Codes
 import time
 import datetime
 
-import matplotlib.pyplot as plt
+import csv
+
+#import matplotlib.pyplot as plt
 
 from math import sqrt
 
 _RUNTIME = 1
 
 _RASPBERRYPI = True
+
+_CSVFILENAME = "kst.csv"
 
 
 class XSensDriver(object):
@@ -41,6 +45,11 @@ class XSensDriver(object):
         self.yaw = []
         self.pitch = []
         self.roll = []
+        
+        with open(_CSVFILENAME, 'w', newline="") as file:
+            filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
+        
+            filewriter.writerow(["Time [Sec]","Roll Angle [Deg]"])
 
 
         if device == 'auto':
@@ -195,6 +204,7 @@ class XSensDriver(object):
         def fill_from_Orientation_Data(o):
             '''Fill messages with information from 'Orientation Data' MTData2
             block.'''
+            t_start = 0
             try:
                 x, y, z, w = o['Q1'], o['Q2'], o['Q3'], o['Q0']
                 print('orientation_data x='+str(x)+',y='+str(y)+',z='+str(z)+',w='+str(w))
@@ -202,6 +212,14 @@ class XSensDriver(object):
                 pass
             try:
                 print('Euler Angles - Roll: '+str(o['Roll'])+', Pitch: '+str(o['Pitch'])+',y='+str(o['Yaw']))
+                #if self.count == 0:
+                   # self.writer.writerow([0,o['Roll']])
+                    #t_start = time.time()
+               # else:
+                    #with open(_CSVFILENAME, 'w', newline="") as file:
+                        #filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
+                        #filewriter.writerow([time.time()-t_start,o['Roll']])
+                    #t_start = time.time()
             except KeyError:
                 pass
 

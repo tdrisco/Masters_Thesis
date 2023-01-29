@@ -391,10 +391,10 @@ class SyncSetting:
     def fromBytes(data):
         lst = struct.unpack('!BBBBHHHH', data)
         return SyncSetting(*lst)
-    def __repr__(self):
-        return f"SyncSetting({self.function},{self.line},{self.polarity},{self.triggerOnce},{self.skipFirst},{self.skipFactor},{self.pulseWidth},{self.offset})"
-    def __str__(self):
-        return f"SyncSetting {self.function=},{self.line=},{self.polarity=},{self.triggerOnce=},{self.skipFirst=},{self.skipFactor=},{self.pulseWidth=},{self.offset=}"
+    #def __repr__(self):
+       # return f"SyncSetting({self.function},{self.line},{self.polarity},{self.triggerOnce},{self.skipFirst},{self.skipFactor},{self.pulseWidth},{self.offset})"
+    #def __str__(self):
+       # return f"SyncSetting {self.function=},{self.line=},{self.polarity=},{self.triggerOnce=},{self.skipFirst=},{self.skipFactor=},{self.pulseWidth=},{self.offset=}"
 
 class MTException(Exception):
     def __init__(self, message):
