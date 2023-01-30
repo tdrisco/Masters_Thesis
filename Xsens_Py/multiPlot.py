@@ -14,27 +14,30 @@ class MainWindow(QtWidgets.QMainWindow):
 
         super(MainWindow, self).__init__(*args, **kwargs)
 
-        self.graphWidget = pg.PlotWidget()
-        self.graphWidget = pg.PlotWidget()
-        self.setCentralWidget(self.graphWidget)
-
-        #self.x = list(range(100))  # 100 time points
-        #self.y = [randint(0,100) for _ in range(100)]  # 100 data points
+        self.win = pg.GraphicsLayoutWidget(show=True, title="Real-Time Data GUI")
+        self.win.resize(600,600)
+        #self.win.setWindowTitle('Real-Time Data Visualization')
 
         self.x = []
         self.roll = []
         self.pitch = []
 
-        self.graphWidget.setBackground('w')
-        self.graphWidget.setTitle("Roll and Pitch Angle in Degrees", color="k", size="12pt")
-        self.graphWidget.setLabel('left', 'Angle [Deg] (°)')
-        self.graphWidget.setLabel('bottom', 'Time [sec] (s)')
-        self.graphWidget.addLegend()
+        self.win.setBackground('w')
+        #pg.setConfigOptions(antialias=True)
+
+        self.p1 = self.win.addPlot(title="Roll Angle")
+        self.p2 = self.win.addPlot(title="Pitch Angle")
+
+        self.p1.setLabel('left', 'Roll Angle [Deg] (°)')
+        self.p1.setLabel('bottom', 'Time [sec] (s)')
+
+        self.p2.setLabel('left', 'Pitch Angle [Deg] (°)')
+        self.p2.setLabel('bottom', 'Time [sec] (s)')
 
         pen1 = pg.mkPen(color=(255, 0, 0))
-        self.data_line1 =  self.graphWidget.plot(self.x, self.roll, pen=pen1, name="Roll Angle")
+        self.data_line1 =  self.p1.plot(self.x, self.roll, pen=pen1, name="Roll Angle")
         pen2 = pg.mkPen(color=(0, 255, 0))
-        self.data_line2 =  self.graphWidget.plot(self.x, self.pitch, pen=pen2, name="Pitch Angle")
+        self.data_line2 =  self.p2.plot(self.x, self.pitch, pen=pen2, name="Pitch Angle")
 
         
 
@@ -47,7 +50,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.driver.spin_once()
         self.driver.count = self.driver.count + 1
 
-        if len(self.x) == 200:
+        if len(self.x) == 100:
             self.x = self.x[1:]
             self.roll = self.roll[1:]
             self.pitch = self.pitch[1:]
@@ -64,7 +67,7 @@ def main():
     #rospy.init_node('xsens_driver')
     app = QtWidgets.QApplication(sys.argv)
     w = MainWindow()
-    w.show()
+    #w.show()
     sys.exit(app.exec_())
     
 
