@@ -14,7 +14,7 @@ from math import sqrt
 
 _RUNTIME = 1
 
-_RASPBERRYPI = True
+_RASPBERRYPI = False
 
 _CSVFILENAME = "kst.csv"
 
@@ -45,6 +45,12 @@ class XSensDriver(object):
         self.yaw = []
         self.pitch = []
         self.roll = []
+
+        self.t_start = datetime.datetime.now()
+
+        #self.roll_cur = 0
+
+        #self.delta_t_curr = 0
         
         with open(_CSVFILENAME, 'w', newline="") as file:
             filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
@@ -84,8 +90,8 @@ class XSensDriver(object):
             t_end = time.time() + _RUNTIME
             while time.time() < t_end:
                 # Spin to try to get new messages
-                self.count = self.count + 1
                 self.spin_once()
+                self.count = self.count + 1
                 #self.reset_vars()
         except KeyboardInterrupt:
             print("Data Stream Interrupted")
@@ -204,7 +210,7 @@ class XSensDriver(object):
         def fill_from_Orientation_Data(o):
             '''Fill messages with information from 'Orientation Data' MTData2
             block.'''
-            t_start = 0
+            
             try:
                 x, y, z, w = o['Q1'], o['Q2'], o['Q3'], o['Q0']
                 print('orientation_data x='+str(x)+',y='+str(y)+',z='+str(z)+',w='+str(w))
@@ -212,14 +218,25 @@ class XSensDriver(object):
                 pass
             try:
                 print('Euler Angles - Roll: '+str(o['Roll'])+', Pitch: '+str(o['Pitch'])+',y='+str(o['Yaw']))
-                #if self.count == 0:
+                if self.count == 0:
+                    self.t_start = datetime.datetime.now()
+                    self.delta_t.append(0)
                    # self.writer.writerow([0,o['Roll']])
                     #t_start = time.time()
-               # else:
+                else:
+                    delta = datetime.datetime.now()-self.t_start
+                    self.delta_t.append(delta.total_seconds() * 1000)
+                    #self.delta_t_curr = time.time()-t_start
+                    #t_start = time.time()
+                    
                     #with open(_CSVFILENAME, 'w', newline="") as file:
                         #filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
                         #filewriter.writerow([time.time()-t_start,o['Roll']])
                     #t_start = time.time()
+                self.roll.append(o['Roll'])
+                self.pitch.append(o['Pitch'])
+                self.yaw.append(o['Yaw'])
+                self.roll_cur = o['Roll']
             except KeyError:
                 pass
 
@@ -303,6 +320,9 @@ def main():
     driver = XSensDriver()
     driver.spin()
     print("The data was sampled {} times".format(driver.count))
+
+    for i in range(driver.count):
+        print("Delta_T: {:.2f}\tRoll Angle: {}".format(driver.delta_t[i],driver.roll[i]))
     
 
 
