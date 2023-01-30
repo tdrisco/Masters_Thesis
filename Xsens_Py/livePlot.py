@@ -21,15 +21,18 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.y = [randint(0,100) for _ in range(100)]  # 100 data points
 
         self.x = []
-        self.y = []
+        self.roll = []
+        self.pitch = []
 
         self.graphWidget.setBackground('w')
         self.graphWidget.setTitle("Roll Angle in Degrees", color="k", size="12pt")
         self.graphWidget.setLabel('left', 'Angle [Deg] (°)')
         self.graphWidget.setLabel('bottom', 'Time [sec] (s)')
 
-        pen = pg.mkPen(color=(255, 0, 0))
-        self.data_line =  self.graphWidget.plot(self.x, self.y, pen=pen)
+        pen1 = pg.mkPen(color=(255, 0, 0))
+        self.data_line1 =  self.graphWidget.plot(self.x, self.roll, pen=pen1)
+        pen2 = pg.mkPen(color=(0, 255, 0))
+        self.data_line2 =  self.graphWidget.plot(self.x, self.pitch, pen=pen2)
 
         self.timer = QtCore.QTimer()
         self.timer.setInterval(1)
@@ -45,12 +48,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.x.append(self.driver.delta_t_curr/1000)
 
         #self.y = self.y[1:]  # Remove the first
-        self.y.append(self.driver.roll_cur)
+        self.roll.append(self.driver.roll_cur)
+        self.pitch.append(self.driver.pitch_cur)
 
         #self.y = self.y[1:]  # Remove the first
         #self.y.append(randint(0,100))  # Add a new random value.
 
-        self.data_line.setData(self.x, self.y)  # Update the data.
+        self.data_line1.setData(self.x, self.roll)  # Update the data.
+        self.data_line2.setData(self.x, self.pitch)  # Update the data.
 
 def main():
     '''Create a ROS node and instantiate the class.'''

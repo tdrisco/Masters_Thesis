@@ -49,6 +49,7 @@ class XSensDriver(object):
         self.t_start = datetime.datetime.now()
 
         self.roll_cur = 0
+        self.pitch_cur = 0
 
         self.delta_t_curr = 0
         
@@ -237,6 +238,7 @@ class XSensDriver(object):
                 self.pitch.append(o['Pitch'])
                 self.yaw.append(o['Yaw'])
                 self.roll_cur = o['Roll']
+                self.pitch_cur = o['Pitch']
                 self.delta_t_curr = self.delta_t[-1]
             except KeyError:
                 pass
