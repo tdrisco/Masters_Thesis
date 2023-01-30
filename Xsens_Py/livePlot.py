@@ -32,7 +32,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.data_line =  self.graphWidget.plot(self.x, self.y, pen=pen)
 
         self.timer = QtCore.QTimer()
-        self.timer.setInterval(50)
+        self.timer.setInterval(1)
         self.timer.timeout.connect(self.update_plot_data)
         self.timer.start()
 
@@ -42,7 +42,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         #self.x = self.x[1:]  # Remove the first y element.
         #self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last.
-        self.x.append(self.driver.count)
+        self.x.append(self.driver.delta_t_curr/1000)
 
         #self.y = self.y[1:]  # Remove the first
         self.y.append(self.driver.roll_cur)

@@ -48,9 +48,9 @@ class XSensDriver(object):
 
         self.t_start = datetime.datetime.now()
 
-        #self.roll_cur = 0
+        self.roll_cur = 0
 
-        #self.delta_t_curr = 0
+        self.delta_t_curr = 0
         
         with open(_CSVFILENAME, 'w', newline="") as file:
             filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
@@ -237,6 +237,7 @@ class XSensDriver(object):
                 self.pitch.append(o['Pitch'])
                 self.yaw.append(o['Yaw'])
                 self.roll_cur = o['Roll']
+                self.delta_t_curr = self.delta_t[-1]
             except KeyError:
                 pass
 
