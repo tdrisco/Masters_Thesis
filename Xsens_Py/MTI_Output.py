@@ -11,6 +11,7 @@ import csv
 #import matplotlib.pyplot as plt
 
 from math import sqrt
+from math import atan2
 
 _RUNTIME = 1
 
@@ -45,11 +46,15 @@ class XSensDriver(object):
         self.yaw = []
         self.pitch = []
         self.roll = []
+        self.angVel = []
+        self.phaseVar = []
 
         self.t_start = datetime.datetime.now()
 
         self.roll_cur = 0
         self.pitch_cur = 0
+        self.angVel_cur = 0
+        self.phaseVar_cur = 0
 
         self.delta_t_curr = 0
         
@@ -256,6 +261,8 @@ class XSensDriver(object):
                 
                 #print('angular_vel_data x='+str(o['gyrX'])+',y='+str(o['gyrY'])+',z='+str(o['gyrZ']))
                 print(' Angular Velocity x='+str(o['gyrX']))
+                self.angVel.append(o['gyrX'])
+                self.angVel_cur = o['gyrX']
                 pass
 
         def fill_from_Analog_In(o):
@@ -319,6 +326,11 @@ class XSensDriver(object):
                 locals()[find_handler_name(n)](o)
             except KeyError:
                 print("Unknown MTi data packet: '%s', ignoring." % n)
+        
+        #bottom of spin function Calculate the phase variable
+        #(Make this into its own function)
+        self.phaseVar_cur = atan2(-self.angVel_cur,self.roll_cur)
+        self.phaseVar.append(self.phaseVar_cur)
 
 
 def main():
