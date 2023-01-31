@@ -15,7 +15,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         self.win = pg.GraphicsLayoutWidget(show=True, title="Real-Time Data GUI")
-        self.win.resize(600,600)
+        self.win.resize(600,500)
         #self.win.setWindowTitle('Real-Time Data Visualization')
 
         self.x = []
@@ -36,7 +36,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         pen1 = pg.mkPen(color=(255, 0, 0))
         self.data_line1 =  self.p1.plot(self.x, self.roll, pen=pen1, name="Roll Angle")
-        pen2 = pg.mkPen(color=(0, 255, 0))
+        pen2 = pg.mkPen(color=(0, 0, 255))
         self.data_line2 =  self.p2.plot(self.x, self.pitch, pen=pen2, name="Pitch Angle")
 
         

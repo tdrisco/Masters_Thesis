@@ -53,10 +53,10 @@ class XSensDriver(object):
 
         self.delta_t_curr = 0
         
-        with open(_CSVFILENAME, 'w', newline="") as file:
-            filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
+        #with open(_CSVFILENAME, 'w', newline="") as file:
+            #filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
         
-            filewriter.writerow(["Time [Sec]","Roll Angle [Deg]"])
+            #filewriter.writerow(["Time [Sec]","Roll Angle [Deg]"])
 
 
         if device == 'auto':
@@ -81,7 +81,7 @@ class XSensDriver(object):
         self.mt = MTI_Setup.MTDevice(device, baudrate, timeout, True, False)
 
         # Configure (see bottom of mtdevice.py)
-        output_config = MTI_Setup.get_output_config('if2000,oe400fw')
+        output_config = MTI_Setup.get_output_config('if2000,oe400fw,wr')
         print("Changing output configuration")
         self.mt.SetOutputConfiguration(output_config)
         print("System is Ok, Ready to Record.")
@@ -94,6 +94,7 @@ class XSensDriver(object):
                 self.spin_once()
                 self.count = self.count + 1
                 #self.reset_vars()
+            self.count = self.count - 1
         except KeyboardInterrupt:
             print("Data Stream Interrupted")
             pass
@@ -218,8 +219,8 @@ class XSensDriver(object):
             except KeyError:
                 pass
             try:
-                print('Euler Angles - Roll: '+str(o['Roll'])+', Pitch: '+str(o['Pitch'])+',y='+str(o['Yaw']))
-                if self.count == 0:
+                print('Euler Angles - Roll: '+str(o['Roll'])+', Pitch: '+str(o['Pitch'])+',y='+str(o['Yaw']), end=" ")
+                if self.count == 1:
                     self.t_start = datetime.datetime.now()
                     self.delta_t.append(0)
                    # self.writer.writerow([0,o['Roll']])
@@ -251,8 +252,11 @@ class XSensDriver(object):
 
         def fill_from_Angular_Velocity(o):
             '''Fill messages with information from 'Angular Velocity' MTData2 block.'''
-            print('angular_vel_data x='+str(o['gyrX'])+',y='+str(o['gyrY'])+',z='+str(o['gyrZ']))
-            pass
+            if self.count != 0:
+                
+                #print('angular_vel_data x='+str(o['gyrX'])+',y='+str(o['gyrY'])+',z='+str(o['gyrZ']))
+                print(' Angular Velocity x='+str(o['gyrX']))
+                pass
 
         def fill_from_Analog_In(o):
             '''Fill messages with information from 'Analog In' MTData2 block.'''
