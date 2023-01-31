@@ -36,12 +36,6 @@ class XSensDriver(object):
 
         self.count = 0
 
-        #Setup the sub plots for Roll Yaw Pitch
-        #self.fig = plt.figure()
-        #self.ax1 = self.fig.add_subplot(3, 1, 1)
-        #self.ax2 = self.fig.add_subplot(3, 1, 2)
-        #self.ax2 = self.fig.add_subplot(3, 1, 3)
-
         self.delta_t = []
         self.yaw = []
         self.pitch = []
@@ -57,6 +51,10 @@ class XSensDriver(object):
         self.phaseVar_cur = 0
 
         self.delta_t_curr = 0
+
+        self.fpt = open(_CSVFILENAME, "w")
+        self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
+        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]"])
         
         #with open(_CSVFILENAME, 'w', newline="") as file:
             #filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
@@ -100,6 +98,7 @@ class XSensDriver(object):
                 self.count = self.count + 1
                 #self.reset_vars()
             self.count = self.count - 1
+            self.fpt.close()
         except KeyboardInterrupt:
             print("Data Stream Interrupted")
             pass
@@ -331,6 +330,8 @@ class XSensDriver(object):
         #(Make this into its own function)
         self.phaseVar_cur = atan2(-self.angVel_cur,self.roll_cur)
         self.phaseVar.append(self.phaseVar_cur)
+        #After each data read write all the current values to kst csv
+        self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVel_cur])
 
 
 def main():
