@@ -52,7 +52,7 @@ class XSensDriver(object):
 
         self.delta_t_curr = 0
 
-        self.fpt = open(_CSVFILENAME, "w")
+        self.fpt = open(_CSVFILENAME, "w", newline="")
         self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
         self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]"])
         
@@ -227,18 +227,10 @@ class XSensDriver(object):
                 if self.count == 1:
                     self.t_start = datetime.datetime.now()
                     self.delta_t.append(0)
-                   # self.writer.writerow([0,o['Roll']])
-                    #t_start = time.time()
                 else:
                     delta = datetime.datetime.now()-self.t_start
                     self.delta_t.append(delta.total_seconds() * 1000)
-                    #self.delta_t_curr = time.time()-t_start
-                    #t_start = time.time()
-                    
-                    #with open(_CSVFILENAME, 'w', newline="") as file:
-                        #filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
-                        #filewriter.writerow([time.time()-t_start,o['Roll']])
-                    #t_start = time.time()
+    
                 self.roll.append(o['Roll'])
                 self.pitch.append(o['Pitch'])
                 self.yaw.append(o['Yaw'])
