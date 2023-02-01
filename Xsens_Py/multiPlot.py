@@ -28,17 +28,17 @@ class MainWindow(QtWidgets.QMainWindow):
         pg.setConfigOptions(antialias=True)
 
         self.p1 = self.win.addPlot(title="Roll and Pitch Angle")
-        self.p2 = self.win.addPlot(title="Phase Portrait")
-        self.p3 = self.win.addPlot(title="Phase Variable")
+        #self.p2 = self.win.addPlot(title="Phase Portrait")
+        #self.p3 = self.win.addPlot(title="Phase Variable")
 
         self.p1.setLabel('left', 'Angle [Deg] (°)')
         self.p1.setLabel('bottom', 'Time [sec] (s)')
 
-        self.p2.setLabel('left', 'Thigh Velocity [Deg/sec] (°/s)')
-        self.p2.setLabel('bottom', 'Thigh Angle [Deg] (°)')
+        #self.p2.setLabel('left', 'Thigh Velocity [Deg/sec] (°/s)')
+       # self.p2.setLabel('bottom', 'Thigh Angle [Deg] (°)')
 
-        self.p3.setLabel('left', 'Phase Variable')
-        self.p3.setLabel('bottom', 'Time [sec] (s)')
+        #self.p3.setLabel('left', 'Phase Variable')
+       # self.p3.setLabel('bottom', 'Time [sec] (s)')
 
         self.p1.addLegend()
 
@@ -48,10 +48,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.data_line2 =  self.p1.plot(self.x, self.pitch, pen=pen2, name="Pitch Angle")
 
         pen3 = pg.mkPen(color=(0, 255, 0))
-        self.data_line3 =  self.p2.plot(self.roll, self.angVel, pen=pen3, name="Phase Portrait")
+        #self.data_line3 =  self.p2.plot(self.roll, self.angVel, pen=pen3, name="Phase Portrait")
 
         pen4 = pg.mkPen(color=(0, 0, 0))
-        self.data_line4 =  self.p3.plot(self.x, self.phaseVar, pen=pen4, name="Phase Variable")
+        #self.data_line4 =  self.p3.plot(self.x, self.phaseVar, pen=pen4, name="Phase Variable")
         
         self.timer = QtCore.QTimer()
         self.timer.setInterval(0)
@@ -77,8 +77,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.data_line1.setData(self.x, self.roll)  # Update the data.
         self.data_line2.setData(self.x, self.pitch)  # Update the data.
-        self.data_line3.setData(self.roll, self.angVel)  # Update the data.
-        self.data_line4.setData(self.x, self.phaseVar)  # Update the data.
+       # self.data_line3.setData(self.roll, self.angVel)  # Update the data.
+       # self.data_line4.setData(self.x, self.phaseVar)  # Update the data.
 
 def main():
     '''Create a ROS node and instantiate the class.'''
