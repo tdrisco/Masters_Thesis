@@ -13,7 +13,7 @@ import csv
 from math import sqrt
 from math import atan2
 
-_RUNTIME = 1
+_RUNTIME = 10
 
 _RASPBERRYPI = False
 
