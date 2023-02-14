@@ -53,7 +53,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.pitch = self.pitch[1:]
 
         self.x.append(self.driver.delta_t_curr/1000)
-        self.roll.append(self.driver.roll_cur+160)
+        self.roll.append(self.driver.roll_cur)
         self.pitch.append(self.driver.pitch_cur)
 
         self.data_line1.setData(self.x, self.roll)  # Update the data.
