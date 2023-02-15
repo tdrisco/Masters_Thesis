@@ -13,9 +13,9 @@ import csv
 from math import sqrt
 from math import atan2
 
-_RUNTIME = 1
+_RUNTIME = 30
 
-_RASPBERRYPI = False
+_RASPBERRYPI = True
 
 _CSVFILENAME = "kst.csv"
 
@@ -55,6 +55,9 @@ class XSensDriver(object):
         self.fpt = open(_CSVFILENAME, "w", newline="")
         self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
         self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]"])
+        
+        print("Reload Data in KST now!")
+        time.sleep(3)
         
         #with open(_CSVFILENAME, 'w', newline="") as file:
             #filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
