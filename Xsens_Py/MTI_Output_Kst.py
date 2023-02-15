@@ -13,9 +13,9 @@ import csv
 from math import sqrt
 from math import atan2
 
-_RUNTIME = 30
+_RUNTIME = 10
 
-_RASPBERRYPI = True
+_RASPBERRYPI = False
 
 _CSVFILENAME = "kst.csv"
 

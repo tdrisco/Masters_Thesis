@@ -64,7 +64,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if len(self.x) == 100:
             self.x = self.x[1:]
-            self.roll = self.roll[1:]
+            self.roll = self.roll[1:] 
             self.pitch = self.pitch[1:]
             self.angVel = self.angVel[1:]
             self.phaseVar = self.phaseVar[1:]
