@@ -1,14 +1,27 @@
 #!/usr/bin/env python
 
+"""
+Author: Tim Driscoll
+Date: 2/22/23
+
+Description: All inclusive MTI Data Collection and processing script
+            1. Collect raw euler angle readings Xsens MTI
+            2. Realtime filtering of euler angle readings
+            3. Realtime calculation of phase variable
+            4. Actively saving data in CSV file
+            5. Vicon interrupt triggered start and stop
+            6. Realtime data visualization made possible with kst
+"""
+
 import MTI_Setup
 import MID_Codes
+
+import RPi.GPIO as GPIO
 
 import time
 import datetime
 
 import csv
-
-#import matplotlib.pyplot as plt
 
 from math import sqrt
 from math import atan2
@@ -18,6 +31,26 @@ _RUNTIME = 10
 _RASPBERRYPI = True
 
 _CSVFILENAME = "kst.csv"
+
+vicon = 26
+motionCap_flag = False
+capFinished = False
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(vicon, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
+def vicon_end(vicon):
+    global motionCap_flag
+    global capFinished
+    if motionCap_flag == False:
+        motionCap_flag = True
+        print("Motion Capture Started-----------------")
+    else:
+        motionCap_flag = False
+        print("Motion Capture Ended--------------------")
+        capFinshed = True
+
+GPIO.add_event_detect(vicon, GPIO.BOTH, callback=vicon_end)
 
 
 class XSensDriver(object):
@@ -59,12 +92,6 @@ class XSensDriver(object):
         print("Reload Data in KST now!")
         time.sleep(3)
         
-        #with open(_CSVFILENAME, 'w', newline="") as file:
-            #filewriter = csv.writer(file,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
-        
-            #filewriter.writerow(["Time [Sec]","Roll Angle [Deg]"])
-
-
         if device == 'auto':
             devs = MTI_Setup.find_devices()
             if devs:
@@ -94,8 +121,11 @@ class XSensDriver(object):
 
     def spin(self):
         try:
-            t_end = time.time() + _RUNTIME
-            while time.time() < t_end:
+            #t_end = time.time() + _RUNTIME
+            dummy = 0
+            while not motionCap_flag:
+                dummy = dummy + 1
+            while motionCap_flag:#time.time() < t_end:
                 # Spin to try to get new messages
                 self.spin_once()
                 self.count = self.count + 1
@@ -333,7 +363,7 @@ def main():
     '''Create a ROS node and instantiate the class.'''
     #rospy.init_node('xsens_driver')
     driver = XSensDriver()
-    driver.spin()
+    driver.spin()   
     print("The data was sampled {} times".format(driver.count))
 
     for i in range(driver.count):
