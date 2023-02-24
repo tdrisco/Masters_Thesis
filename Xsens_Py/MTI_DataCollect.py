@@ -61,7 +61,7 @@ folder = "2_23_TestData"
 
 class XSensDriver(object):
 
-    def __init__(self):
+    def __init__(self, Filter=True):
 
         #Tune these parameters depeding on Pi or computer
         if _RASPBERRYPI:
@@ -95,6 +95,9 @@ class XSensDriver(object):
         self.mt = MTI_Setup.MTDevice(device, baudrate, timeout, True, False)
 
         # Configure (see bottom of mtdevice.py)
+        if Filter:
+            self.EKF_Setup()
+        
         output_config = MTI_Setup.get_output_config('if2000,oe400fw,wr')
         print("Changing output configuration")
         self.mt.SetOutputConfiguration(output_config)
@@ -103,7 +106,7 @@ class XSensDriver(object):
     def file_setup(self,filename=_CSVFILENAME):
         
         #Reset all the data collection variables
-        self.count = 1
+        self.count = 0
 
         self.delta_t = []
         self.yaw = []
@@ -124,7 +127,49 @@ class XSensDriver(object):
         self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]"])
         
         print("Reload Data in KST now!")
-        time.sleep(3)
+        time.sleep(1.5)
+        
+    def EKF_Setup(self):
+        self.estimates = []
+
+        #Define the state variables and covariance 
+        self.X = np.mat([[0], [0], [0]])
+        self.S = np.mat([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        self.I = np.mat([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+
+        self.Xt_t1 = np.mat([[0.0], [0.0], [0.0]])
+        self.Kt = np.mat([[0], [0], [0]])
+        self.St_t1 = np.mat([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+
+        #Define the Jacobians
+        self.J_dfdx = np.mat([[1, 1, 0], [0, 1, 0], [(1/10)*cos(self.X[0,0]/10), 0, 0]])
+        self.J_dfda = np.mat([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+        self.J_dgdx = np.mat([0, 0, 1])
+        self.J_dgdn = np.mat([1])
+
+        #Define the noise covariance 
+        # Dynamic noise covariance (how much prediction is trusted (0 is no noise))
+        self.Q = np.mat([[0, 0, 0], [0, 0.001, 0], [0, 0, 0]])
+        # Measurment Noise
+        self.R = np.mat([1])
+    
+    def EKF_Run(self, InputVal):
+        self.J_dfdx[2,0] = (1/10)*cos(self.X[0,0]/10) # Update The Jacobians
+
+        self.Xt_t1[0,0] = self.X[0,0] + self.X[1,0]
+        self.Xt_t1[1,0] = self.X[1,0]
+        self.Xt_t1[2,0] = sin(self.X[0,0]/10)
+
+        self.St_t1 = self.J_dfdx*self.S*self.J_dfdx.transpose() + self.J_dfda*self.Q*self.J_dfda.transpose()
+        self.Yt = InputVal
+        self.Kt = (self.St_t1*self.J_dgdx.getT()) * pow(self.J_dgdx*self.St_t1*self.J_dgdx.getT() + self.J_dgdn*self.R*self.J_dgdn.getT(), -1)
+
+        self.g = sin(self.X[0,0]/10)
+        self.X = self.Xt_t1 + self.Kt*(self.Yt - self.g)
+        self.S = (self.I - self.Kt*self.J_dgdx)*self.St_t1
+
+        #estimates.append(X[2,0])
+        return self.X[2,0]
 
     def spin(self):
         try:
@@ -364,7 +409,10 @@ class XSensDriver(object):
         self.phaseVar_cur = atan2(-self.angVel_cur,self.roll_cur)
         self.phaseVar.append(self.phaseVar_cur)
         #After each data read write all the current values to kst csv
-        self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVel_cur])
+        if(self.roll_cur == 0 and self.pitch_cur == 0):
+            pass
+        else:
+            self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVel_cur])
 
 
 def main():
@@ -380,8 +428,8 @@ def main():
             driver.spin()   
             print("The data was sampled {} times".format(driver.count))
 
-            for i in range(driver.count - 1):
-                print("Delta_T: {:.2f}\tRoll Angle: {}".format(driver.delta_t[i]/1000,driver.roll[i]))
+            for i in range(driver.count):
+                print("Delta_T: {:.5f}\tRoll Angle: {}".format(driver.delta_t[i]/1000,driver.roll[i]))
             fileNum += 1
 
 if __name__ == '__main__':
