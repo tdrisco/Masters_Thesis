@@ -13,7 +13,7 @@ import csv
 from math import sqrt
 from math import atan2
 
-_RUNTIME = 10
+_RUNTIME = 1
 
 _RASPBERRYPI = True
 
@@ -337,7 +337,7 @@ def main():
     print("The data was sampled {} times".format(driver.count))
 
     for i in range(driver.count):
-        print("Delta_T: {:.2f}\tRoll Angle: {}".format(driver.delta_t[i],driver.roll[i]))
+        print("Delta_T: {:.5f}\tRoll Angle: {}".format(driver.delta_t[i]/1000,driver.roll[i]))
     
 
 

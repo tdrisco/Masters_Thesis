@@ -44,13 +44,19 @@ def vicon_end(vicon):
     global capFinished
     if motionCap_flag == False:
         motionCap_flag = True
-        print("Motion Capture Started-----------------")
+        #print("Motion Capture Started-----------------")
     else:
         motionCap_flag = False
-        print("Motion Capture Ended--------------------")
-        capFinshed = True
+        #print("Motion Capture Ended--------------------")
+        #capFinshed = True
 
 GPIO.add_event_detect(vicon, GPIO.BOTH, callback=vicon_end)
+
+#Setup Data collction variables----------------------------
+subject = ["AB01","AB02","AB03","AB04"]
+treadmillSpeed = ["slow","normal","fast"]
+treadmillIncline = ["neg10","neg7.5","neg5","neg2.5","0","2.5","5","7.5","10"]
+folder = "2_23_TestData"
 
 
 class XSensDriver(object):
@@ -66,31 +72,6 @@ class XSensDriver(object):
             timeout = 0.002
         
         baudrate = 115200
-
-        self.count = 0
-
-        self.delta_t = []
-        self.yaw = []
-        self.pitch = []
-        self.roll = []
-        self.angVel = []
-        self.phaseVar = []
-
-        self.t_start = datetime.datetime.now()
-
-        self.roll_cur = 0
-        self.pitch_cur = 0
-        self.angVel_cur = 0
-        self.phaseVar_cur = 0
-
-        self.delta_t_curr = 0
-
-        self.fpt = open(_CSVFILENAME, "w", newline="")
-        self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
-        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]"])
-        
-        print("Reload Data in KST now!")
-        time.sleep(3)
         
         if device == 'auto':
             devs = MTI_Setup.find_devices()
@@ -118,6 +99,32 @@ class XSensDriver(object):
         print("Changing output configuration")
         self.mt.SetOutputConfiguration(output_config)
         print("System is Ok, Ready to Record.")
+    
+    def file_setup(self,filename=_CSVFILENAME):
+        
+        #Reset all the data collection variables
+        self.count = 1
+
+        self.delta_t = []
+        self.yaw = []
+        self.pitch = []
+        self.roll = []
+        self.angVel = []
+        self.phaseVar = []
+
+        self.roll_cur = 0
+        self.pitch_cur = 0
+        self.angVel_cur = 0
+        self.phaseVar_cur = 0
+
+        self.delta_t_curr = 0
+    
+        self.fpt = open(filename, "w", newline="")
+        self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
+        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]"])
+        
+        print("Reload Data in KST now!")
+        time.sleep(3)
 
     def spin(self):
         try:
@@ -125,6 +132,7 @@ class XSensDriver(object):
             dummy = 0
             while not motionCap_flag:
                 dummy = dummy + 1
+            self.t_start = datetime.datetime.now()
             while motionCap_flag:#time.time() < t_end:
                 # Spin to try to get new messages
                 self.spin_once()
@@ -360,16 +368,21 @@ class XSensDriver(object):
 
 
 def main():
-    '''Create a ROS node and instantiate the class.'''
-    #rospy.init_node('xsens_driver')
-    driver = XSensDriver()
-    driver.spin()   
-    print("The data was sampled {} times".format(driver.count))
-
-    for i in range(driver.count):
-        print("Delta_T: {:.2f}\tRoll Angle: {}".format(driver.delta_t[i],driver.roll[i]))
+    #Intialize MTI Xsens Driver Interface
     
+    fileNum = 1
+    for incline in treadmillIncline:
+        for speed in treadmillSpeed:
+            driver = XSensDriver()
+            fileName = "{}/{}_{}_{}_{}.csv".format(folder,fileNum,subject[0],speed,incline)
+            driver.file_setup(fileName)
+            print("Ready------------------------")
+            driver.spin()   
+            print("The data was sampled {} times".format(driver.count))
 
+            for i in range(driver.count - 1):
+                print("Delta_T: {:.2f}\tRoll Angle: {}".format(driver.delta_t[i]/1000,driver.roll[i]))
+            fileNum += 1
 
 if __name__ == '__main__':
     main()
