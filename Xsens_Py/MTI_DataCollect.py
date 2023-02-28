@@ -23,8 +23,8 @@ import datetime
 
 import csv
 
-from math import sqrt
-from math import atan2
+import numpy as np
+from math import sqrt, cos, sin, atan2
 
 _RUNTIME = 10
 
@@ -124,7 +124,7 @@ class XSensDriver(object):
     
         self.fpt = open(filename, "w", newline="")
         self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
-        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]"])
+        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]","EKF Roll Angle [Deg]"])
         
         print("Reload Data in KST now!")
         time.sleep(1.5)
@@ -408,11 +408,14 @@ class XSensDriver(object):
         #(Make this into its own function)
         self.phaseVar_cur = atan2(-self.angVel_cur,self.roll_cur)
         self.phaseVar.append(self.phaseVar_cur)
+        if self.FilterSwitch:
+            self.EKFroll_cur = self.EKF_Run(self.roll_cur)
+            self.EKFroll.append(self.EKFroll_cur)
         #After each data read write all the current values to kst csv
         if(self.roll_cur == 0 and self.pitch_cur == 0):
             pass
         else:
-            self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVel_cur])
+            self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVel_cur, self.EKFroll_cur])
 
 
 def main():
@@ -421,7 +424,7 @@ def main():
     fileNum = 1
     for incline in treadmillIncline:
         for speed in treadmillSpeed:
-            driver = XSensDriver()
+            driver = XSensDriver(Filter=True)
             fileName = "{}/{}_{}_{}_{}.csv".format(folder,fileNum,subject[0],speed,incline)
             driver.file_setup(fileName)
             print("Ready------------------------")

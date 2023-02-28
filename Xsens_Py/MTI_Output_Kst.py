@@ -12,7 +12,7 @@ import numpy as np
 
 from math import sqrt, cos, sin, atan2
 
-_RUNTIME = 1
+_RUNTIME = 10
 
 _RASPBERRYPI = True
 
@@ -41,6 +41,7 @@ class XSensDriver(object):
         self.roll = []
         self.angVel = []
         self.phaseVar = []
+        self.EKFroll = []
 
         self.t_start = datetime.datetime.now()
 
@@ -48,15 +49,19 @@ class XSensDriver(object):
         self.pitch_cur = 0
         self.angVel_cur = 0
         self.phaseVar_cur = 0
+        self.EKFroll_cur = 0
 
         self.delta_t_curr = 0
         
         if Filter:
             self.EKF_Setup()
+            self.FilterSwitch = True
+        else:
+            self.FilterSwitch = False
 
         self.fpt = open(_CSVFILENAME, "w", newline="")
         self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
-        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]"])
+        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]","EKF Roll Angle [Deg]"])
         
         print("Reload Data in KST now!")
         time.sleep(1.5)
@@ -108,9 +113,9 @@ class XSensDriver(object):
 
         #Define the noise covariance 
         # Dynamic noise covariance (how much prediction is trusted (0 is no noise))
-        self.Q = np.mat([[0, 0, 0], [0, 0.001, 0], [0, 0, 0]])
+        self.Q = np.mat([[0, 0, 0], [0, 1, 0], [0, 0, 0]])  #Q= 0.001   R = 1
         # Measurment Noise
-        self.R = np.mat([1])
+        self.R = np.mat([0.0001])
     
     def EKF_Run(self, InputVal):
         self.J_dfdx[2,0] = (1/10)*cos(self.X[0,0]/10) # Update The Jacobians
@@ -363,8 +368,11 @@ class XSensDriver(object):
         #(Make this into its own function)
         self.phaseVar_cur = atan2(-self.angVel_cur,self.roll_cur)
         self.phaseVar.append(self.phaseVar_cur)
+        if self.FilterSwitch:
+            self.EKFroll_cur = self.EKF_Run(self.roll_cur)
+            self.EKFroll.append(self.EKFroll_cur)
         #After each data read write all the current values to kst csv
-        self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVel_cur])
+        self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVel_cur, self.EKFroll_cur])
 
 
 def main():
@@ -374,8 +382,8 @@ def main():
     driver.spin()
     print("The data was sampled {} times".format(driver.count))
 
-    for i in range(driver.count):
-        print("Delta_T: {:.5f}\tRoll Angle: {}".format(driver.delta_t[i]/1000,driver.roll[i]))
+    for i in range(len(driver.delta_t)):
+        print("Delta_T: {:.5f}\tRoll Angle: {}\t\tEKF Roll Angle: {}".format(driver.delta_t[i]/1000,driver.roll[i],driver.EKFroll[i]))
     
 
 
