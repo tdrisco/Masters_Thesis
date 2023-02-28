@@ -16,7 +16,7 @@ class FilterTest(object):
         self.noise_data = []
         self.true_data = []
         self.count = []
-
+        
         i = 0
 
         with open(sampleData, 'r') as file:
