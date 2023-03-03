@@ -56,7 +56,7 @@ GPIO.add_event_detect(vicon, GPIO.BOTH, callback=vicon_end)
 subject = ["AB01","AB02","AB03","AB04"]
 treadmillSpeed = ["slow","normal","fast"]
 treadmillIncline = ["neg10","neg7.5","neg5","neg2.5","0","2.5","5","7.5","10"]
-folder = "2_23_TestData"
+folder = "3_2_Test_Sara"
 
 
 class XSensDriver(object):
@@ -97,6 +97,7 @@ class XSensDriver(object):
         # Configure (see bottom of mtdevice.py)
         if Filter:
             self.EKF_Setup()
+            self.FilterSwitch = True
         
         output_config = MTI_Setup.get_output_config('if2000,oe400fw,wr')
         print("Changing output configuration")
@@ -114,11 +115,13 @@ class XSensDriver(object):
         self.roll = []
         self.angVel = []
         self.phaseVar = []
+        self.EKFroll = []
 
         self.roll_cur = 0
         self.pitch_cur = 0
         self.angVel_cur = 0
         self.phaseVar_cur = 0
+        self.EKFroll_cur = 0
 
         self.delta_t_curr = 0
     
