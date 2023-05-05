@@ -10,13 +10,13 @@ import csv
 
 import numpy as np
 
-from math import sqrt, cos, sin, atan2
+from math import sqrt, cos, sin, atan2, pi
 
 _RUNTIME = 10
 
-_RASPBERRYPI = True
+_RASPBERRYPI = False
 
-_CSVFILENAME = "kst.csv"
+_CSVFILENAME = "GyroTest.csv"
 
 
 class XSensDriver(object):
@@ -39,7 +39,9 @@ class XSensDriver(object):
         self.yaw = []
         self.pitch = []
         self.roll = []
-        self.angVel = []
+        self.angVel_x = []
+        self.angVel_y = []
+        self.angVel_z = []
         self.phaseVar = []
         self.EKFroll = []
 
@@ -47,7 +49,9 @@ class XSensDriver(object):
 
         self.roll_cur = 0
         self.pitch_cur = 0
-        self.angVel_cur = 0
+        self.angVelx_cur = 0
+        self.angVely_cur = 0
+        self.angVelz_cur = 0
         self.phaseVar_cur = 0
         self.EKFroll_cur = 0
 
@@ -61,7 +65,7 @@ class XSensDriver(object):
 
         self.fpt = open(_CSVFILENAME, "w", newline="")
         self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
-        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]","EKF Roll Angle [Deg]"])
+        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity X [deg/s]", "Angular Velocity Y [deg/s]", "Angular Velocity Z [deg/s]", "EKF Roll Angle [Deg]"])
         
         print("Reload Data in KST now!")
         time.sleep(1.5)
@@ -296,10 +300,14 @@ class XSensDriver(object):
             '''Fill messages with information from 'Angular Velocity' MTData2 block.'''
             if self.count != 0:
                 
-                #print('angular_vel_data x='+str(o['gyrX'])+',y='+str(o['gyrY'])+',z='+str(o['gyrZ']))
-                print(' Angular Velocity x='+str(o['gyrX']))
-                self.angVel.append(o['gyrX'])
-                self.angVel_cur = o['gyrX']
+                print(' Angular Velocity x='+str(o['gyrX'])+',y='+str(o['gyrY'])+',z='+str(o['gyrZ']))
+                #print(' Angular Velocity x='+str(o['gyrX']))
+                self.angVel_x.append(o['gyrX'])
+                self.angVelx_cur = o['gyrX']
+                self.angVel_y.append(o['gyrY'])
+                self.angVely_cur = o['gyrY']
+                self.angVel_z.append(o['gyrZ'])
+                self.angVelz_cur = o['gyrZ']
                 pass
 
         def fill_from_Analog_In(o):
@@ -366,13 +374,13 @@ class XSensDriver(object):
         
         #bottom of spin function Calculate the phase variable
         #(Make this into its own function)
-        self.phaseVar_cur = atan2(-self.angVel_cur,self.roll_cur)
+        self.phaseVar_cur = atan2(-self.angVelz_cur,self.roll_cur)
         self.phaseVar.append(self.phaseVar_cur)
         if self.FilterSwitch:
             self.EKFroll_cur = self.EKF_Run(self.roll_cur)
             self.EKFroll.append(self.EKFroll_cur)
         #After each data read write all the current values to kst csv
-        self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVel_cur, self.EKFroll_cur])
+        self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVelx_cur * 180/pi, self.angVely_cur * 180/pi, self.angVelz_cur * 180/pi, self.EKFroll_cur])
 
 
 def main():
