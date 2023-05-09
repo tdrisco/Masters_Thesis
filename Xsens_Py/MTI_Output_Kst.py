@@ -12,11 +12,11 @@ import numpy as np
 
 from math import sqrt, cos, sin, atan2, pi
 
-_RUNTIME = 10
+_RUNTIME = 60
 
 _RASPBERRYPI = False
 
-_CSVFILENAME = "GyroTest.csv"
+_CSVFILENAME = "GyroTest_Tim_05.csv"
 
 
 class XSensDriver(object):
@@ -122,6 +122,48 @@ class XSensDriver(object):
         self.R = np.mat([0.0001])
     
     def EKF_Run(self, InputVal):
+        self.J_dfdx[2,0] = (1/10)*cos(self.X[0,0]/10) # Update The Jacobians
+
+        self.Xt_t1[0,0] = self.X[0,0] + self.X[1,0]
+        self.Xt_t1[1,0] = self.X[1,0]
+        self.Xt_t1[2,0] = sin(self.X[0,0]/10)
+
+        self.St_t1 = self.J_dfdx*self.S*self.J_dfdx.transpose() + self.J_dfda*self.Q*self.J_dfda.transpose()
+        self.Yt = InputVal
+        self.Kt = (self.St_t1*self.J_dgdx.getT()) * pow(self.J_dgdx*self.St_t1*self.J_dgdx.getT() + self.J_dgdn*self.R*self.J_dgdn.getT(), -1)
+
+        self.g = sin(self.X[0,0]/10)
+        self.X = self.Xt_t1 + self.Kt*(self.Yt - self.g)
+        self.S = (self.I - self.Kt*self.J_dgdx)*self.St_t1
+
+        #estimates.append(X[2,0])
+        return self.X[2,0]
+    
+    def CDS_Setup(self):
+        self.estimates = []
+
+        #Define the state variables and covariance 
+        self.X = np.mat([[0], [0], [0]])
+        self.S = np.mat([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        self.I = np.mat([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+
+        self.Xt_t1 = np.mat([[0.0], [0.0], [0.0]])
+        self.Kt = np.mat([[0], [0], [0]])
+        self.St_t1 = np.mat([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+
+        #Define the Jacobians
+        self.J_dfdx = np.mat([[1, 1, 0], [0, 1, 0], [(1/10)*cos(self.X[0,0]/10), 0, 0]])
+        self.J_dfda = np.mat([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+        self.J_dgdx = np.mat([0, 0, 1])
+        self.J_dgdn = np.mat([1])
+
+        #Define the noise covariance 
+        # Dynamic noise covariance (how much prediction is trusted (0 is no noise))
+        self.Q = np.mat([[0, 0, 0], [0, 1, 0], [0, 0, 0]])  #Q= 0.001   R = 1
+        # Measurment Noise
+        self.R = np.mat([0.0001])
+    
+    def CDS_Run(self, InputVal):
         self.J_dfdx[2,0] = (1/10)*cos(self.X[0,0]/10) # Update The Jacobians
 
         self.Xt_t1[0,0] = self.X[0,0] + self.X[1,0]
