@@ -56,8 +56,13 @@ GPIO.add_event_detect(vicon, GPIO.BOTH, callback=vicon_end)
 subject = ["AB01","AB02","AB03","AB04"]
 treadmillSpeed = ["slow","normal","fast"]
 treadmillIncline = ["neg10","neg7.5","neg5","neg2.5","0","2.5","5","7.5","10"]
-folder = "5_16_Test_AB01"
+folder = "5_16_Test1_AB01"
 
+#Setup Data collection variables for second set of test----
+subject2 = ["AB01","AB02","AB03","AB04"]
+treadmillSpeed2 = ["slow","normal","fast"]
+treadmillIncline2 = ["neg10","neg7.5","neg5","neg2.5","0","2.5","5","7.5","10"]
+folder2 = "5_16_Test2_AB01"
 
 class XSensDriver(object):
 
