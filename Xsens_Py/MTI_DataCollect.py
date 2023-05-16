@@ -53,6 +53,13 @@ def vicon_end(vicon):
 GPIO.add_event_detect(vicon, GPIO.BOTH, callback=vicon_end)
 
 #Setup Data collction variables----------------------------
+
+#slow: 0.67 m/s - 1.5 mph
+#normal: 1.00 m/s - 2.25 mph
+#fast: 1.35 m/s - 3.00 mph
+
+#acceleration: 0.1 m/s 
+
 subject = ["AB01","AB02","AB03","AB04"]
 treadmillSpeed = ["slow","normal","fast"]
 treadmillIncline = ["neg10","neg7.5","neg5","neg2.5","0","2.5","5","7.5","10"]
