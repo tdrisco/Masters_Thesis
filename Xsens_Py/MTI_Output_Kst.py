@@ -62,6 +62,8 @@ class XSensDriver(object):
             self.FilterSwitch = True
         else:
             self.FilterSwitch = False
+        
+        self.CDS_Setup()
 
         self.fpt = open(_CSVFILENAME, "w", newline="")
         self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
@@ -140,46 +142,48 @@ class XSensDriver(object):
         return self.X[2,0]
     
     def CDS_Setup(self):
-        self.estimates = []
+
+        self.estimates_cds = []
 
         #Define the state variables and covariance 
-        self.X = np.mat([[0], [0], [0]])
-        self.S = np.mat([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        self.I = np.mat([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        self.T = 1/100 #Sampling frequency
+        self.M = 7 #Number of fourier series components
+        self.eta = 1 #Learning Coefficient
+        self.mu = 0.1 #Coupling Constant
 
-        self.Xt_t1 = np.mat([[0.0], [0.0], [0.0]])
-        self.Kt = np.mat([[0], [0], [0]])
-        self.St_t1 = np.mat([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+        #Define intial frequency and phase variable
+        self.w = [2*pi*2/5]
+        self.phi = [0]
 
-        #Define the Jacobians
-        self.J_dfdx = np.mat([[1, 1, 0], [0, 1, 0], [(1/10)*cos(self.X[0,0]/10), 0, 0]])
-        self.J_dfda = np.mat([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
-        self.J_dgdx = np.mat([0, 0, 1])
-        self.J_dgdn = np.mat([1])
+        self.ac = np.zeros(self.M)
+        self.bc = np.zeros(self.M)
 
-        #Define the noise covariance 
-        # Dynamic noise covariance (how much prediction is trusted (0 is no noise))
-        self.Q = np.mat([[0, 0, 0], [0, 1, 0], [0, 0, 0]])  #Q= 0.001   R = 1
-        # Measurment Noise
-        self.R = np.mat([0.0001])
+        
     
     def CDS_Run(self, InputVal):
-        self.J_dfdx[2,0] = (1/10)*cos(self.X[0,0]/10) # Update The Jacobians
+        
+        y = InputVal
+        self.estimate = 0
 
-        self.Xt_t1[0,0] = self.X[0,0] + self.X[1,0]
-        self.Xt_t1[1,0] = self.X[1,0]
-        self.Xt_t1[2,0] = sin(self.X[0,0]/10)
+        for c in range(self.M):
+            self.estimate = self.estimate + self.ac(c) * cos(c*self.phi[-1]) + self.bc(c) * sin(c*self.phi[-1])
+        
+        self.error = y - self.estimate
 
-        self.St_t1 = self.J_dfdx*self.S*self.J_dfdx.transpose() + self.J_dfda*self.Q*self.J_dfda.transpose()
-        self.Yt = InputVal
-        self.Kt = (self.St_t1*self.J_dgdx.getT()) * pow(self.J_dgdx*self.St_t1*self.J_dgdx.getT() + self.J_dgdn*self.R*self.J_dgdn.getT(), -1)
+        w_curr = self.w[-1]
+        self.w.append(abs(w_curr - self.T*self.mu*self.error*sin(self.phi[-1])))
 
-        self.g = sin(self.X[0,0]/10)
-        self.X = self.Xt_t1 + self.Kt*(self.Yt - self.g)
-        self.S = (self.I - self.Kt*self.J_dgdx)*self.St_t1
+        for c in range(self.M):
+            self.ac[c] = self.ac[c] + self.eta * self.T * cos(c*self.phi[-1])*self.error
+            self.bc[c] = self.bc[c] + self.eta * self.T * sin(c*self.phi[-1])*self.error
 
-        #estimates.append(X[2,0])
-        return self.X[2,0]
+        phi_curr = self.phi[-1]
+        phi_next = phi_curr + self.T*(w_curr - self.mu*self.error*sin(phi_curr)) % 2*pi
+
+        if(((phi_next - phi_curr) % 2*pi) > 0.5*pi):
+            self.phi.append(phi_curr)
+        else:
+            self.phi.append(phi_next)
 
     def spin(self):
         try:
@@ -421,8 +425,9 @@ class XSensDriver(object):
         if self.FilterSwitch:
             self.EKFroll_cur = self.EKF_Run(self.roll_cur)
             self.EKFroll.append(self.EKFroll_cur)
+        self.CDS_Run(self.angVelz_cur * 180/pi)
         #After each data read write all the current values to kst csv
-        self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVelx_cur * 180/pi, self.angVely_cur * 180/pi, self.angVelz_cur * 180/pi, self.EKFroll_cur])
+        self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVelx_cur * 180/pi, self.angVely_cur * 180/pi, self.angVelz_cur * 180/pi, self.EKFroll_cur, self.w[-1]/(2*pi), self.phi[-1]])
 
 
 def main():
