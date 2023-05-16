@@ -12,11 +12,11 @@ import numpy as np
 
 from math import sqrt, cos, sin, atan2, pi
 
-_RUNTIME = 60
+_RUNTIME = 20
 
 _RASPBERRYPI = False
 
-_CSVFILENAME = "GyroTest_Tim_05.csv"
+_CSVFILENAME = "CDSTest_Tim_09.csv"
 
 
 class XSensDriver(object):
@@ -67,7 +67,7 @@ class XSensDriver(object):
 
         self.fpt = open(_CSVFILENAME, "w", newline="")
         self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
-        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity X [deg/s]", "Angular Velocity Y [deg/s]", "Angular Velocity Z [deg/s]", "EKF Roll Angle [Deg]"])
+        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity X [deg/s]", "Angular Velocity Y [deg/s]", "Angular Velocity Z [deg/s]", "EKF Roll Angle [Deg]", "Step Frequency [Hz]", "Phase Variable"])
         
         print("Reload Data in KST now!")
         time.sleep(1.5)
@@ -143,8 +143,6 @@ class XSensDriver(object):
     
     def CDS_Setup(self):
 
-        self.estimates_cds = []
-
         #Define the state variables and covariance 
         self.T = 1/100 #Sampling frequency
         self.M = 7 #Number of fourier series components
@@ -166,7 +164,7 @@ class XSensDriver(object):
         self.estimate = 0
 
         for c in range(self.M):
-            self.estimate = self.estimate + self.ac(c) * cos(c*self.phi[-1]) + self.bc(c) * sin(c*self.phi[-1])
+            self.estimate = self.estimate + self.ac[c] * cos(c*self.phi[-1]) + self.bc[c] * sin(c*self.phi[-1])
         
         self.error = y - self.estimate
 
@@ -178,9 +176,9 @@ class XSensDriver(object):
             self.bc[c] = self.bc[c] + self.eta * self.T * sin(c*self.phi[-1])*self.error
 
         phi_curr = self.phi[-1]
-        phi_next = phi_curr + self.T*(w_curr - self.mu*self.error*sin(phi_curr)) % 2*pi
+        phi_next = (phi_curr + self.T*(w_curr - self.mu*self.error*sin(phi_curr))) % (2*pi)
 
-        if(((phi_next - phi_curr) % 2*pi) > 0.5*pi):
+        if(((phi_next - phi_curr) % (2*pi)) > (0.5*pi)):
             self.phi.append(phi_curr)
         else:
             self.phi.append(phi_next)
@@ -420,14 +418,15 @@ class XSensDriver(object):
         
         #bottom of spin function Calculate the phase variable
         #(Make this into its own function)
-        self.phaseVar_cur = atan2(-self.angVelz_cur,self.roll_cur)
-        self.phaseVar.append(self.phaseVar_cur)
-        if self.FilterSwitch:
-            self.EKFroll_cur = self.EKF_Run(self.roll_cur)
-            self.EKFroll.append(self.EKFroll_cur)
-        self.CDS_Run(self.angVelz_cur * 180/pi)
-        #After each data read write all the current values to kst csv
-        self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVelx_cur * 180/pi, self.angVely_cur * 180/pi, self.angVelz_cur * 180/pi, self.EKFroll_cur, self.w[-1]/(2*pi), self.phi[-1]])
+        if(self.count != 0):
+            self.phaseVar_cur = atan2(-self.angVelz_cur,self.roll_cur)
+            self.phaseVar.append(self.phaseVar_cur)
+            if self.FilterSwitch:
+                self.EKFroll_cur = self.EKF_Run(self.roll_cur)
+                self.EKFroll.append(self.EKFroll_cur)
+            self.CDS_Run(self.angVelz_cur * 180/pi)
+            #After each data read write all the current values to kst csv
+            self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVelx_cur * 180/pi, self.angVely_cur * 180/pi, self.angVelz_cur * 180/pi, self.EKFroll_cur, self.w[-1]/(2*pi), self.phi[-1]])
 
 
 def main():
