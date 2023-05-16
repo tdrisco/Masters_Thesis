@@ -24,7 +24,7 @@ import datetime
 import csv
 
 import numpy as np
-from math import sqrt, cos, sin, atan2
+from math import sqrt, cos, sin, atan2, pi
 
 _RUNTIME = 10
 
@@ -56,7 +56,7 @@ GPIO.add_event_detect(vicon, GPIO.BOTH, callback=vicon_end)
 subject = ["AB01","AB02","AB03","AB04"]
 treadmillSpeed = ["slow","normal","fast"]
 treadmillIncline = ["neg10","neg7.5","neg5","neg2.5","0","2.5","5","7.5","10"]
-folder = "3_2_Test_Sara"
+folder = "5_16_Test_AB01"
 
 
 class XSensDriver(object):
@@ -113,13 +113,17 @@ class XSensDriver(object):
         self.yaw = []
         self.pitch = []
         self.roll = []
-        self.angVel = []
+        self.angVel_x = []
+        self.angVel_y = []
+        self.angVel_z = []
         self.phaseVar = []
         self.EKFroll = []
 
         self.roll_cur = 0
         self.pitch_cur = 0
-        self.angVel_cur = 0
+        self.angVelx_cur = 0
+        self.angVely_cur = 0
+        self.angVelz_cur = 0
         self.phaseVar_cur = 0
         self.EKFroll_cur = 0
 
@@ -127,7 +131,7 @@ class XSensDriver(object):
     
         self.fpt = open(filename, "w", newline="")
         self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
-        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity [deg/s]","EKF Roll Angle [Deg]"])
+        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity X [deg/s]", "Angular Velocity Y [deg/s]", "Angular Velocity Z [deg/s]", "EKF Roll Angle [Deg]", "Step Frequency [Hz]", "Phase Variable"])
         
         print("Reload Data in KST now!")
         time.sleep(1.5)
@@ -173,6 +177,46 @@ class XSensDriver(object):
 
         #estimates.append(X[2,0])
         return self.X[2,0]
+
+    def CDS_Setup(self):
+
+        #Define the state variables and covariance 
+        self.T = 1/100 #Sampling frequency
+        self.M = 7 #Number of fourier series components
+        self.eta = 1 #Learning Coefficient
+        self.mu = 0.1 #Coupling Constant
+
+        #Define intial frequency and phase variable
+        self.w = [2*pi*2/5]
+        self.phi = [0]
+
+        self.ac = np.zeros(self.M)
+        self.bc = np.zeros(self.M)
+
+    def CDS_Run(self, InputVal):
+        
+        y = InputVal
+        self.estimate = 0
+
+        for c in range(self.M):
+            self.estimate = self.estimate + self.ac[c] * cos(c*self.phi[-1]) + self.bc[c] * sin(c*self.phi[-1])
+        
+        self.error = y - self.estimate
+
+        w_curr = self.w[-1]
+        self.w.append(abs(w_curr - self.T*self.mu*self.error*sin(self.phi[-1])))
+
+        for c in range(self.M):
+            self.ac[c] = self.ac[c] + self.eta * self.T * cos(c*self.phi[-1])*self.error
+            self.bc[c] = self.bc[c] + self.eta * self.T * sin(c*self.phi[-1])*self.error
+
+        phi_curr = self.phi[-1]
+        phi_next = (phi_curr + self.T*(w_curr - self.mu*self.error*sin(phi_curr))) % (2*pi)
+
+        if(((phi_next - phi_curr) % (2*pi)) > (0.5*pi)):
+            self.phi.append(phi_curr)
+        else:
+            self.phi.append(phi_next)
 
     def spin(self):
         try:
@@ -339,10 +383,14 @@ class XSensDriver(object):
             '''Fill messages with information from 'Angular Velocity' MTData2 block.'''
             if self.count != 0:
                 
-                #print('angular_vel_data x='+str(o['gyrX'])+',y='+str(o['gyrY'])+',z='+str(o['gyrZ']))
-                print(' Angular Velocity x='+str(o['gyrX']))
-                self.angVel.append(o['gyrX'])
-                self.angVel_cur = o['gyrX']
+                print(' Angular Velocity x='+str(o['gyrX'])+',y='+str(o['gyrY'])+',z='+str(o['gyrZ']))
+                #print(' Angular Velocity x='+str(o['gyrX']))
+                self.angVel_x.append(o['gyrX'])
+                self.angVelx_cur = o['gyrX']
+                self.angVel_y.append(o['gyrY'])
+                self.angVely_cur = o['gyrY']
+                self.angVel_z.append(o['gyrZ'])
+                self.angVelz_cur = o['gyrZ']
                 pass
 
         def fill_from_Analog_In(o):
@@ -409,16 +457,15 @@ class XSensDriver(object):
         
         #bottom of spin function Calculate the phase variable
         #(Make this into its own function)
-        self.phaseVar_cur = atan2(-self.angVel_cur,self.roll_cur)
-        self.phaseVar.append(self.phaseVar_cur)
-        if self.FilterSwitch:
-            self.EKFroll_cur = self.EKF_Run(self.roll_cur)
-            self.EKFroll.append(self.EKFroll_cur)
-        #After each data read write all the current values to kst csv
-        if(self.roll_cur == 0 and self.pitch_cur == 0):
-            pass
-        else:
-            self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVel_cur, self.EKFroll_cur])
+        if(self.count != 0):
+            self.phaseVar_cur = atan2(-self.angVelz_cur,self.roll_cur)
+            self.phaseVar.append(self.phaseVar_cur)
+            if self.FilterSwitch:
+                self.EKFroll_cur = self.EKF_Run(self.roll_cur)
+                self.EKFroll.append(self.EKFroll_cur)
+            self.CDS_Run(self.angVelz_cur * 180/pi)
+            #After each data read write all the current values to kst csv
+            self.file.writerow([self.delta_t_curr/1000, self.roll_cur, self.pitch_cur, self.phaseVar_cur, self.angVelx_cur * 180/pi, self.angVely_cur * 180/pi, self.angVelz_cur * 180/pi, self.EKFroll_cur, self.w[-1]/(2*pi), self.phi[-1]])
 
 
 def main():
