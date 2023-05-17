@@ -12,11 +12,21 @@ import numpy as np
 
 from math import sqrt, cos, sin, atan2, pi
 
-_RUNTIME = 20
+_RUNTIME = 45
 
-_RASPBERRYPI = False
+_RASPBERRYPI = True
 
-_CSVFILENAME = "CDSTest_Tim_09.csv"
+#slow: 0.67 m/s - 1.5 mph
+#normal: 1.00 m/s - 2.25 mph
+#fast: 1.35 m/s - 3.00 mph
+#switch 0.67 m/s to 1.35 m/s
+
+#acceleration: 0.1 m/s 
+
+#_CSVFILENAME = "Ab02_slow_neg5deg.csv"
+#_CSVFILENAME = "Ab02_normal_neg5deg.csv"
+#_CSVFILENAME = "Ab02_fast_neg5deg.csv"
+_CSVFILENAME = "Ab02_switch_neg5deg.csv"
 
 
 class XSensDriver(object):
