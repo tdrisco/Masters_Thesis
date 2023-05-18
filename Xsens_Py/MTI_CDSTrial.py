@@ -466,10 +466,5 @@ def main():
     driver.spin()
     print("The data was sampled {} times".format(driver.count))
 
-    for i in range(len(driver.delta_t)):
-        print("Delta_T: {:.5f}\tRoll Angle: {}\t\tEKF Roll Angle: {}".format(driver.delta_t[i]/1000,driver.roll[i],driver.EKFroll[i]))
-    
-
-
 if __name__ == '__main__':
     main()
