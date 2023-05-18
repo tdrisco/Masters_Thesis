@@ -16,12 +16,12 @@ from math import sqrt, cos, sin, atan2, pi
 #Runtime - 30 for slow, normal, fast -> 60 for switch
 _RUNTIME = 30
 
-#Incline - [0]0, [1]10deg, [2]neg10deg, [3]5deg, [4]neg5deg
+#Incline - [0]0, [1]10deg, [2]neg10deg, [3]neg5deg, [4]5deg
 _INCLINE = 0
-#Speed - [0]slow, [2]normal, [3]fast, [4]switch
+#Speed - [0]slow, [1]normal, [2]fast, [3]switch
 _SPEED = 0
 
-_RASPBERRYPI = False
+_RASPBERRYPI = True
 
 #slow: 0.67 m/s - 1.5 mph
 #normal: 1.00 m/s - 2.25 mph
@@ -36,11 +36,11 @@ _RASPBERRYPI = False
 #_CSVFILENAME = "Ab02_switch_neg5deg.csv"
 
 
-_SUBJECT = 2
+_SUBJECT = 0
 
 subject = ["AB01","AB02","AB03","AB04"]
 treadmillSpeed = ["slow","normal","fast","switch"]
-treadmillIncline = ["0","10","neg10","5","neg5"]
+treadmillIncline = ["0","10","neg10","neg5","5"]
 folder = "5_18_Test_{}".format(subject[_SUBJECT])
 subfolder = "{}_{}".format(subject[_SUBJECT], treadmillIncline[_INCLINE])
 
