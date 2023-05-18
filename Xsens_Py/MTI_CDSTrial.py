@@ -7,14 +7,21 @@ import time
 import datetime
 
 import csv
+import os
 
 import numpy as np
 
 from math import sqrt, cos, sin, atan2, pi
 
-_RUNTIME = 45
+#Runtime - 30 for slow, normal, fast -> 60 for switch
+_RUNTIME = 30
 
-_RASPBERRYPI = True
+#Incline - [0]0, [1]10deg, [2]neg10deg, [3]5deg, [4]neg5deg
+_INCLINE = 0
+#Speed - [0]slow, [2]normal, [3]fast, [4]switch
+_SPEED = 0
+
+_RASPBERRYPI = False
 
 #slow: 0.67 m/s - 1.5 mph
 #normal: 1.00 m/s - 2.25 mph
@@ -26,7 +33,16 @@ _RASPBERRYPI = True
 #_CSVFILENAME = "Ab02_slow_neg5deg.csv"
 #_CSVFILENAME = "Ab02_normal_neg5deg.csv"
 #_CSVFILENAME = "Ab02_fast_neg5deg.csv"
-_CSVFILENAME = "Ab02_switch_neg5deg.csv"
+#_CSVFILENAME = "Ab02_switch_neg5deg.csv"
+
+
+_SUBJECT = 2
+
+subject = ["AB01","AB02","AB03","AB04"]
+treadmillSpeed = ["slow","normal","fast","switch"]
+treadmillIncline = ["0","10","neg10","5","neg5"]
+folder = "5_18_Test_{}".format(subject[_SUBJECT])
+subfolder = "{}_{}".format(subject[_SUBJECT], treadmillIncline[_INCLINE])
 
 
 class XSensDriver(object):
@@ -42,30 +58,6 @@ class XSensDriver(object):
             timeout = 0.002
         
         baudrate = 115200
-
-        self.count = 0
-
-        self.delta_t = []
-        self.yaw = []
-        self.pitch = []
-        self.roll = []
-        self.angVel_x = []
-        self.angVel_y = []
-        self.angVel_z = []
-        self.phaseVar = []
-        self.EKFroll = []
-
-        self.t_start = datetime.datetime.now()
-
-        self.roll_cur = 0
-        self.pitch_cur = 0
-        self.angVelx_cur = 0
-        self.angVely_cur = 0
-        self.angVelz_cur = 0
-        self.phaseVar_cur = 0
-        self.EKFroll_cur = 0
-
-        self.delta_t_curr = 0
         
         if Filter:
             self.EKF_Setup()
@@ -74,13 +66,6 @@ class XSensDriver(object):
             self.FilterSwitch = False
         
         self.CDS_Setup()
-
-        self.fpt = open(_CSVFILENAME, "w", newline="")
-        self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
-        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity X [deg/s]", "Angular Velocity Y [deg/s]", "Angular Velocity Z [deg/s]", "EKF Roll Angle [Deg]", "Step Frequency [Hz]", "Phase Variable"])
-        
-        print("Reload Data in KST now!")
-        time.sleep(1.5)
 
         if device == 'auto':
             devs = MTI_Setup.find_devices()
@@ -108,6 +93,39 @@ class XSensDriver(object):
         print("Changing output configuration")
         self.mt.SetOutputConfiguration(output_config)
         print("System is Ok, Ready to Record.")
+
+    def file_setup(self,filename):
+        
+        #Reset all the data collection variables
+        self.count = 0
+
+        self.delta_t = []
+        self.yaw = []
+        self.pitch = []
+        self.roll = []
+        self.angVel_x = []
+        self.angVel_y = []
+        self.angVel_z = []
+        self.phaseVar = []
+        self.EKFroll = []
+
+        self.roll_cur = 0
+        self.pitch_cur = 0
+        self.angVelx_cur = 0
+        self.angVely_cur = 0
+        self.angVelz_cur = 0
+        self.phaseVar_cur = 0
+        self.EKFroll_cur = 0
+
+        self.delta_t_curr = 0
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        self.fpt = open(filename, "w", newline="")
+        self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
+        self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity X [deg/s]", "Angular Velocity Y [deg/s]", "Angular Velocity Z [deg/s]", "EKF Roll Angle [Deg]", "Step Frequency [Hz]", "Phase Variable"])
+        
+        print("Reload Data in KST now!")
+        time.sleep(1.5)
     
     def EKF_Setup(self):
         self.estimates = []
@@ -443,6 +461,8 @@ def main():
     '''Create a ROS node and instantiate the class.'''
     #rospy.init_node('xsens_driver')
     driver = XSensDriver(Filter=True)
+    fileName = "{}/{}/{}_{}_{}.csv".format(folder, subfolder, subject[_SUBJECT],treadmillSpeed[_SPEED],treadmillIncline[_INCLINE])
+    driver.file_setup(fileName)
     driver.spin()
     print("The data was sampled {} times".format(driver.count))
 
