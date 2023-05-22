@@ -38,7 +38,7 @@ _RASPBERRYPI = True
 
 _SUBJECT = 3
 
-subject = ["AB01","AB02","AB03","AB04"]
+subject = ["AB01","AB02","AB03","AB04","AB05"]
 treadmillSpeed = ["slow","normal","fast","switch"]
 treadmillIncline = ["0","10","neg10","neg5","5"]
 folder = "5_22_Test_{}".format(subject[_SUBJECT])
