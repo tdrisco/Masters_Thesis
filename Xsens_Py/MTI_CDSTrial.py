@@ -36,12 +36,12 @@ _RASPBERRYPI = True
 #_CSVFILENAME = "Ab02_switch_neg5deg.csv"
 
 
-_SUBJECT = 0
+_SUBJECT = 3
 
 subject = ["AB01","AB02","AB03","AB04"]
 treadmillSpeed = ["slow","normal","fast","switch"]
 treadmillIncline = ["0","10","neg10","neg5","5"]
-folder = "5_18_Test_{}".format(subject[_SUBJECT])
+folder = "5_22_Test_{}".format(subject[_SUBJECT])
 subfolder = "{}_{}".format(subject[_SUBJECT], treadmillIncline[_INCLINE])
 
 
