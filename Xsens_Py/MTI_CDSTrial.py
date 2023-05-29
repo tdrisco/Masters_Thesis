@@ -14,12 +14,13 @@ import numpy as np
 from math import sqrt, cos, sin, atan2, pi
 
 #Runtime - 30 for slow, normal, fast -> 60 for switch
-_RUNTIME = 30
+_RUNTIME = 60
 
 #Incline - [0]0, [1]10deg, [2]neg10deg, [3]neg5deg, [4]5deg
-_INCLINE = 0
+_INCLINE = 4
 #Speed - [0]slow, [1]normal, [2]fast, [3]switch
-_SPEED = 0
+_SPEED = 3
+_SUBJECT = 5
 
 _RASPBERRYPI = True
 
@@ -36,12 +37,12 @@ _RASPBERRYPI = True
 #_CSVFILENAME = "Ab02_switch_neg5deg.csv"
 
 
-_SUBJECT = 3
 
-subject = ["AB01","AB02","AB03","AB04","AB05"]
+
+subject = ["AB01","AB02","AB03","AB04","AB05","AB06"]
 treadmillSpeed = ["slow","normal","fast","switch"]
 treadmillIncline = ["0","10","neg10","neg5","5"]
-folder = "5_22_Test_{}".format(subject[_SUBJECT])
+folder = "5_28_Test_{}".format(subject[_SUBJECT])
 subfolder = "{}_{}".format(subject[_SUBJECT], treadmillIncline[_INCLINE])
 
 
@@ -123,9 +124,6 @@ class XSensDriver(object):
         self.fpt = open(filename, "w", newline="")
         self.file = csv.writer(self.fpt,delimiter=",",quotechar="|",quoting=csv.QUOTE_MINIMAL)
         self.file.writerow(["Time [Sec]","Roll Angle [Deg]", "Pitch Angle [Deg]", "Phase Angle", "Angular Velocity X [deg/s]", "Angular Velocity Y [deg/s]", "Angular Velocity Z [deg/s]", "EKF Roll Angle [Deg]", "Step Frequency [Hz]", "Phase Variable"])
-        
-        print("Reload Data in KST now!")
-        time.sleep(1.5)
     
     def EKF_Setup(self):
         self.estimates = []
