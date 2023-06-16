@@ -1,0 +1,401 @@
+%Read in all trial data and display main graph
+
+clear
+clc
+close all
+
+%% Navigate to and open all trial data and save in large data structure
+
+subjects_R = {'AB01', 'AB02', 'AB03', 'AB04', 'AB05', 'AB06'};
+inclines_R = {'0', '5', '10', 'neg5', 'neg10'};
+inclines2_R = {'pos0', 'pos5', 'pos10', 'neg5', 'neg10'};
+speeds_R = {'slow', 'normal', 'fast', 'switch'};
+
+
+for i=1:1:length(subjects_R)
+    for j = 1:1:length(inclines_R)
+        for k = 1:1:length(speeds_R)
+            %Read in all 120 tables
+            filename = sprintf('%s/%s_%s/%s_%s_%s.csv',subjects_R{i},subjects_R{i},inclines_R{j},subjects_R{i},speeds_R{k},inclines_R{j});
+            Data.(subjects_R{i}).(inclines2_R{j}).(speeds_R{k}) = readtable(filename);
+        end
+    end
+end
+
+%% Plot data that we want to look at further
+subjects_P = {'AB06'};
+inclines_P = {'neg10'};
+speeds_P = {'slow', 'normal', 'fast'};
+count = 1;
+
+for i=1:1:length(subjects_P)
+    for j = 1:1:length(inclines_P)
+        for k = 1:1:length(speeds_P)
+            time{count} = Data.(subjects_P{i}).(inclines_P{j}).(speeds_P{k}).Time_Sec_;
+            phase{count} = Data.(subjects_P{i}).(inclines_P{j}).(speeds_P{k}).PhaseVariable;
+            frequency{count} = Data.(subjects_P{i}).(inclines_P{j}).(speeds_P{k}).StepFrequency_Hz_;
+            thighAngle{count} = Data.(subjects_P{i}).(inclines_P{j}).(speeds_P{k}).PitchAngle_Deg_;
+            thighAngleVel{count} = Data.(subjects_P{i}).(inclines_P{j}).(speeds_P{k}).AngularVelocityZ_deg_s_;
+            count = count + 1;
+        end
+    end
+end
+
+% points = 1:length(phase{1});
+% points = points/100;
+% 
+% figure('Color','W');
+% plot(points,phase{1})
+% hold on
+% plot(points,frequency{1})
+% plot(points,phase{3})
+% plot(points,frequency{3})
+% title('Phase VS. Time');
+% xlabel('Time [s] Seconds')
+% ylabel('Phase CDS')
+% grid on
+% 
+% figure('Color','W');
+% plot(points,phase{1})
+% hold on
+% plot(points,frequency{1},'k:')
+% title('Phase VS. Time');
+% xlabel('Time [s] Seconds')
+% ylabel('Phase CDS')
+% grid on
+
+%%find points of interest in phase
+for jj = 1:1:length(phase)
+    phase_points = 1;
+    ang_points = 1;
+    count = 1;
+    count2 = 1;
+    for i=1:1:length(phase{jj})-1
+        phase_breakdown{phase_points}(count) = phase{jj}(i);
+        AngVel_breakdown{phase_points}(count) = thighAngleVel{jj}(i);
+        Ang_breakdown{phase_points}(count) = thighAngle{jj}(i);
+        Ang2_breakdown{ang_points}(count2) = thighAngle{jj}(i);
+        count = count + 1;
+        count2 = count2 + 1;
+        if(phase{jj}(i+1) < phase{jj}(i))
+            transition(phase_points) = i;
+            phase_points = phase_points + 1;
+            count = 1;
+        end
+
+        if(thighAngle{jj}(i+1) < thighAngle{jj}(i) && count2 > count)
+            transition2(ang_points) = i;
+            ang_points = ang_points + 1;
+            count2 = 1;
+        end
+
+    end
+
+    phase_points = length(phase_breakdown);
+    
+    for i=1:1:phase_points
+        phase_sizes(i) = length(phase_breakdown{i});
+    end
+
+    for i=1:1:ang_points
+        Ang2_sizes(i) = length(Ang2_breakdown{i});
+    end
+    
+    max_length = max(phase_sizes(2:end-1));
+    max_length2 = max(Ang2_sizes(2:end-1));
+    count = 1;
+
+%% Handle any bad data for averages
+
+%     if(jj == 1)
+%         max_length = 126;
+%     end
+    if(jj == 2)
+        max_length = 112;
+    end
+    if(jj == 3)
+        max_length = 101;
+    end
+
+    
+    for i=2:1:phase_points-1
+        if(max_length-phase_sizes(i) < 1000 && max_length-phase_sizes(i) >= 0)
+            Outliers(count) = i;
+            count = count + 1;
+        end
+    end
+    fprintf('Trial: %d\tSteps: %d\tSteps Used: %d\n',jj,length(phase_breakdown),length(Outliers))
+    for i=1:1:length(Outliers)
+        phase_segments{i} = phase_breakdown{Outliers(i)};
+        AngVel_segments{i} = AngVel_breakdown{Outliers(i)};
+        Ang_segments{i} = Ang_breakdown{Outliers(i)};
+        %Ang2_segments{i} = Ang2_breakdown{Outliers(i)};
+    end
+    
+    for i = 1:1:length(phase_segments)
+        xnew = linspace(0.01,length(phase_segments{i})/100,max_length);
+    
+        xold = 1:length(phase_segments{i});
+        xold = xold/100;
+    
+        phase_interp{i} = interp1(xold,phase_segments{i},xnew,'linear');
+        phase_interp_mat(i,:) = phase_interp{i};
+
+        AngVel_interp{i} = interp1(xold,AngVel_segments{i},xnew,'linear');
+        AngVel_interp_mat(i,:) = AngVel_interp{i};
+
+        Ang_interp{i} = interp1(xold,Ang_segments{i},xnew,'linear');
+        Ang_interp_mat(i,:) = Ang_interp{i};
+
+%         xnew = linspace(0.01,length(Ang2_segments{i})/100,max_length2);
+%     
+%         xold = 1:length(Ang2_segments{i});
+%         xold = xold/100;
+% 
+%         Ang2_interp{i} = interp1(xold,Ang2_segments{i},xnew,'linear');
+%         Ang2_interp_mat(i,:) = Ang2_interp{i};
+    end
+    
+    phase_mean{jj} = mean(phase_interp_mat);
+    phase_std{jj} = std(phase_interp_mat,0,1);
+    phase_std_plus{jj} =  normalize(phase_mean{jj} + phase_std{jj},"range");
+    phase_std_minus{jj} = normalize(phase_mean{jj} - phase_std{jj},"range");
+    phase_mean_norm{jj} = normalize(phase_mean{jj},"range");
+
+    AngVel_mean{jj} = mean(AngVel_interp_mat);
+    Ang_mean{jj} = mean(Ang_interp_mat);
+%     Ang2_mean{jj} = mean(Ang2_interp_mat);
+    
+    points = 1:length(phase_mean{jj});
+    points = points/100;
+    %points = rescale(points,0,100);
+    phase_points_array{jj} = points;
+    
+
+%     points2 = 1:length(Ang2_mean{jj});
+%     points2 = points2/100;
+%     Ang2_points_array{jj} = points2;
+
+    clear phase_breakdown
+    clear transition
+    clear phase_sizes
+    clear Outliers
+    clear phase_segments
+    clear phase_interp
+    clear phase_interp_mat
+    
+    clear AngVel_breakdown
+    clear AngVel_segments
+    clear AngVel_interp
+    clear AngVel_interp_mat
+
+    clear Ang_breakdown
+    clear Ang_segments
+    clear Ang_interp
+    clear Ang_interp_mat
+
+    clear Ang2_breakdown
+    clear transition2
+    clear Ang2_sizes
+    clear Ang2_segments
+    clear Ang2_interp
+    clear Ang2_interp_mat
+
+end
+
+cMap2 = [[1,0,0],
+               [0,0,1],
+               [0,0.4,0]];
+cMap1 = [[1,.6,.6],
+               [0.4,1,1],
+               [.6,1,.6]];
+
+% cMap = jet(3)
+% cMap1 = brighten(custom_cmap,.5)
+% cMap2 = brighten(custom_cmap,-.5)
+plotNum = 1;
+
+for i=1:length(subjects_P)
+    fig = figure('Color','W');
+
+    fill([phase_points_array{plotNum},fliplr(phase_points_array{(plotNum)})],[phase_std_plus{plotNum},fliplr(phase_std_minus{plotNum})],cMap1(1,:),'LineStyle','none')
+    hold on
+    fill([phase_points_array{plotNum+1},fliplr(phase_points_array{plotNum+1})],[phase_std_plus{plotNum+1},fliplr(phase_std_minus{plotNum+1})],cMap1(2,:),'LineStyle','none')
+    fill([phase_points_array{plotNum+2},fliplr(phase_points_array{plotNum+2})],[phase_std_plus{plotNum+2},fliplr(phase_std_minus{plotNum+2})],cMap1(3,:),'LineStyle','none')
+    
+    plot(phase_points_array{plotNum},phase_mean_norm{plotNum},"-",'Color',cMap2(1,:))
+    plot(phase_points_array{plotNum+1},phase_mean_norm{plotNum+1},"--",'Color',cMap2(2,:))
+    plot(phase_points_array{plotNum+2},phase_mean_norm{plotNum+2},"-.",'Color',cMap2(3,:))
+    legend('','','','0.67 m/s', '1.0 m/s', '1.35 m/s', 'Location','northwest')
+    %title('Phase VS. Time AB01 0 Degrees');
+    xlabel('Time [s] Seconds')
+    ylabel('Normalized Phase Variable')
+    %grid on
+    plotNum = plotNum+3;
+
+    saveas(fig,subjects_P{i},'epsc')
+end
+
+
+% p = 1:1:length(phase{7});
+% p = p/100;
+% figure('Color','W');
+% plot(p,phase{7})
+% title('Thigh Angle VS. Time AB01 0 Degrees');
+% xlabel('Time [s] Seconds')
+% ylabel('Degrees [Deg]')
+% grid on
+
+
+
+
+
+% 
+% figure('Color','W');
+% plot(phase_points_array{1},AngVel_mean{1})
+% hold on
+% plot(phase_points_array{2},AngVel_mean{2})
+% plot(phase_points_array{3},AngVel_mean{3})
+% legend('0.67 m/s', '1.0 m/s', '1.35 m/s', 'Location','northwest')
+% title('Thigh Angular Velocity VS. Time AB01 0 Degrees');
+% xlabel('Time [s] Seconds')
+% ylabel('Degrees per Second [Deg/s]')
+% grid on
+% 
+% figure('Color','W');
+% plot(phase_points_array{1},Ang_mean{1})
+% hold on
+% plot(phase_points_array{2},Ang_mean{2})
+% plot(phase_points_array{3},Ang_mean{3})
+% legend('0.67 m/s', '1.0 m/s', '1.35 m/s', 'Location','northeast')
+% title('Thigh Angle VS. Time AB01 0 Degrees');
+% xlabel('Time [s] Seconds')
+% ylabel('Degrees [Deg]')
+% grid on
+% 
+% figure('Color','W');
+% plot(Ang2_points_array{1},Ang2_mean{1})
+% hold on
+% plot(Ang2_points_array{2},Ang2_mean{2})
+% plot(Ang2_points_array{3},Ang2_mean{3})
+% plot(phase_points_array{1},phase_mean_norm{1})
+% plot(phase_points_array{2},phase_mean_norm{2})
+% plot(phase_points_array{3},phase_mean_norm{3})
+% legend('0.67 m/s', '1.0 m/s', '1.35 m/s', '0.67 m/s phase', '1.0 m/s phase', '1.35 m/s phase', 'Location','southeast')
+% title('Thigh Angle2 VS. Time AB01 0 Degrees');
+% xlabel('Time [s] Seconds')
+% ylabel('Degrees [Deg]')
+% grid on
+
+
+% figure('Color','W');
+% plot(phase_points_array{5},phase_mean_norm{5})
+% hold on
+% plot(phase_points_array{6},phase_mean_norm{6})
+% plot(phase_points_array{7},phase_mean_norm{7})
+% legend('0.67 m/s', '1.0 m/s', '1.35 m/s', 'Location','northwest')
+% title('Phase VS. Time AB01 5 Degrees');
+% xlabel('Time [s] Seconds')
+% ylabel('Phase CDS')
+% grid on
+% 
+% figure('Color','W');
+% plot(phase_points_array{9},phase_mean_norm{9})
+% hold on
+% plot(phase_points_array{10},phase_mean_norm{10})
+% plot(phase_points_array{11},phase_mean_norm{11})
+% legend('0.67 m/s', '1.0 m/s', '1.35 m/s', 'Location','northwest')
+% title('Phase VS. Time AB01 10 Degrees');
+% xlabel('Time [s] Seconds')
+% ylabel('Phase CDS')
+% grid on
+
+
+
+
+% fig = figure('Color','W');
+% subplot(1,3,1)
+% fill([phase_points_array{1},fliplr(phase_points_array{1})],[phase_std_plus{1},fliplr(phase_std_minus{1})],'r')
+% hold on
+% plot(phase_points_array{1},phase_mean_norm{1},'-k')
+% %plot(phase_points_array{4},phase_mean_norm{4},'--')
+% %plot(phase_points_array{7},phase_mean_norm{7},':')
+% %plot(phase_points_array{10},phase_mean_norm{10},'-.')
+% %plot(phase_points_array{13},phase_mean_norm{13},'--*','MarkerSize',1)
+% %plot(phase_points_array{16},phase_mean_norm{16},':diamond','MarkerSize',1)
+% %legend('AB01  ','AB02  ','AB03  ','AB04  ','AB05  ','AB06  ', 'Location','northwest','Fontsize', 14)
+% %title('Phase VS. Time AB01 0 Degrees');
+% % xlabel('Gait Cycle Percentage [%]')
+% % ylabel('Normalized Phase Variable')
+% %grid on
+% 
+% subplot(1,3,2)
+% plot(phase_points_array{2},phase_mean_norm{2},'-')
+% hold on
+% plot(phase_points_array{5},phase_mean_norm{5},'--')
+% plot(phase_points_array{8},phase_mean_norm{8},':')
+% plot(phase_points_array{11},phase_mean_norm{11},'-.')
+% plot(phase_points_array{14},phase_mean_norm{14},'--*','MarkerSize',1)
+% plot(phase_points_array{17},phase_mean_norm{17},':diamond','MarkerSize',1)
+% %legend('AB01  ','AB02  ','AB03  ','AB04  ','AB05  ','AB06  ', 'Location','northwest')
+% %title('Phase VS. Time AB01 0 Degrees');
+% %xlabel('Gait Cycle Percentage [%]')
+% %ylabel('Normalized Phase Variable')
+% 
+% subplot(1,3,3)
+% plot(phase_points_array{3},phase_mean_norm{3},'-')
+% hold on
+% plot(phase_points_array{6},phase_mean_norm{6},'--')
+% plot(phase_points_array{9},phase_mean_norm{9},':')
+% plot(phase_points_array{12},phase_mean_norm{12},'-.')
+% plot(phase_points_array{15},phase_mean_norm{15},'--*','MarkerSize',1)
+% plot(phase_points_array{18},phase_mean_norm{18},':diamond','MarkerSize',1)
+% %legend('AB01  ','AB02  ','AB03  ','AB04  ','AB05  ','AB06  ', 'Location','northwest')
+% %title('Phase VS. Time AB01 0 Degrees');
+% %xlabel('Gait Cycle Percentage [%]')
+% %ylabel('Normalized Phase Variable')
+% 
+% han=axes(fig,'visible','off'); 
+% han.Title.Visible='on';
+% han.XLabel.Visible='on';
+% han.YLabel.Visible='on';
+% ylabel(han,'Normalized Phase Variable','FontSize',18);
+% xlabel(han,'Time [s] Seconds','FontSize',18);
+% 
+% figure('Color','W');
+% plot(phase_points_array{1},phase_mean_norm{1},'-')
+% hold on
+% plot(phase_points_array{4},phase_mean_norm{4},'--')
+% plot(phase_points_array{7},phase_mean_norm{7},':')
+% plot(phase_points_array{10},phase_mean_norm{10},'-.')
+% plot(phase_points_array{13},phase_mean_norm{13},'--*','MarkerSize',1)
+% plot(phase_points_array{16},phase_mean_norm{16},':diamond','MarkerSize',1)
+% legend('AB01  ','AB02  ','AB03  ','AB04  ','AB05  ','AB06  ', 'Location','northwest')
+% %title('Phase VS. Time AB01 0 Degrees');
+% xlabel('Gait Cycle Percentage [%]')
+% ylabel('Normalized Phase Variable')
+% %grid on
+% 
+% figure('Color','W');plot(phase_points_array{2},phase_mean_norm{2},'-')
+% hold on
+% plot(phase_points_array{5},phase_mean_norm{5},'--')
+% plot(phase_points_array{8},phase_mean_norm{8},':')
+% plot(phase_points_array{11},phase_mean_norm{11},'-.')
+% plot(phase_points_array{14},phase_mean_norm{14},'--*','MarkerSize',1)
+% plot(phase_points_array{17},phase_mean_norm{17},':diamond','MarkerSize',1)
+% legend('AB01  ','AB02  ','AB03  ','AB04  ','AB05  ','AB06  ', 'Location','northwest')
+% %title('Phase VS. Time AB01 0 Degrees');
+% xlabel('Gait Cycle Percentage [%]')
+% ylabel('Normalized Phase Variable')
+% 
+% figure('Color','W');plot(phase_points_array{3},phase_mean_norm{3},'-')
+% hold on
+% plot(phase_points_array{6},phase_mean_norm{6},'--')
+% plot(phase_points_array{9},phase_mean_norm{9},':')
+% plot(phase_points_array{12},phase_mean_norm{12},'-.')
+% plot(phase_points_array{15},phase_mean_norm{15},'--*','MarkerSize',1)
+% plot(phase_points_array{18},phase_mean_norm{18},':diamond','MarkerSize',1)
+% legend('AB01  ','AB02  ','AB03  ','AB04  ','AB05  ','AB06  ', 'Location','northwest')
+% %title('Phase VS. Time AB01 0 Degrees');
+% xlabel('Gait Cycle Percentage [%]')
+% ylabel('Normalized Phase Variable')
